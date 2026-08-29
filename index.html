@@ -4081,7 +4081,7 @@ body.supabase-authenticated #loginPanel {
     </div>
 </div>
 <div id="header">
-<h1>有做錯麻煩再跟我說謝謝!</h1>
+
 <br/><hr/>
 </div>
 <div id="v40-home-exam-countdown" class="v40-home-exam-countdown" aria-live="polite">📅 第四階段測驗：2026/11/07　｜　距離測驗還有：70天</div>
@@ -5855,6 +5855,64 @@ body.v40-night .account-divider{background:#374151;}
     function saveErrorStats(stats) {
         localStorage.setItem("questionErrorStats", JSON.stringify(stats));
     }
+    async function saveQuestionToSupabase(question, correct, questionType) {
+        try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) return;
+            if (!question || !question["題目"]) return;
+
+            const subject = question.__subject || "其他科目";
+            const cleanQuestion = String(question["題目"] || "")
+                .replace(/<[^>]*>/g, "")
+                .trim();
+            const questionId = subject + "||" + cleanQuestion;
+
+            const { data: oldRow, error: readError } = await supabaseClient
+                .from("question_stats")
+                .select("attempts,correct,wrong,correct_streak")
+                .eq("user_id", user.id)
+                .eq("question_id", questionId)
+                .maybeSingle();
+
+            if (readError) {
+                console.warn("讀取 Supabase 題目紀錄失敗：", readError);
+                return;
+            }
+
+            const attempts = (Number(oldRow?.attempts) || 0) + 1;
+            const correctCount = (Number(oldRow?.correct) || 0) + (correct ? 1 : 0);
+            const wrongCount = (Number(oldRow?.wrong) || 0) + (correct ? 0 : 1);
+            const streak = correct
+                ? (Number(oldRow?.correct_streak) || 0) + 1
+                : 0;
+
+            const payload = {
+                user_id: user.id,
+                question_id: questionId,
+                subject: subject,
+                question_type: questionType || "",
+                attempts: attempts,
+                correct: correctCount,
+                wrong: wrongCount,
+                correct_streak: streak,
+                last_answered_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            const { error: saveError } = await supabaseClient
+                .from("question_stats")
+                .upsert(payload, { onConflict: "user_id,question_id" });
+
+            if (saveError) {
+                console.warn("寫入 Supabase 題目紀錄失敗：", saveError);
+                return;
+            }
+
+            console.log("✅ Supabase 題目紀錄已同步：", questionId);
+        } catch (e) {
+            console.warn("Supabase 題目同步發生例外：", e);
+        }
+    }
     function recordQuestionResult(question, correct, questionType) {
         if (!question || !question["題目"]) return;
         const subject = question.__subject || "其他科目";
@@ -5885,6 +5943,8 @@ body.v40-night .account-divider{background:#374151;}
             stats[key].correctStreak = 0;
         }
         saveErrorStats(stats);
+        // 同步雲端：保留 localStorage 作為備援
+        saveQuestionToSupabase(question, correct, questionType);
     }
     function findQuestionData(record) {
         try {
