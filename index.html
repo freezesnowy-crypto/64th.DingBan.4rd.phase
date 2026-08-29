@@ -36,6 +36,12 @@ async function loginUser() {
     return;
   }
 
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(email)) {
+    status.textContent = "Email 格式不正確，例如：name@example.com";
+    return;
+  }
+
   status.textContent = "登入中...";
 
   const { data, error } =
@@ -73,6 +79,13 @@ async function registerUser() {
 
   if (!email || !password) {
     status.textContent = "請輸入 Email 和密碼";
+    return;
+  }
+
+  // 先做基本 Email 格式檢查，避免 Supabase 回傳 invalid format。
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(email)) {
+    status.textContent = "Email 格式不正確，例如：name@example.com";
     return;
   }
 
@@ -5232,6 +5245,77 @@ body.v40-night #selectedSubjectTestPanel .subject-group-academic {
     function saveErrorStats(stats) {
         localStorage.setItem("questionErrorStats", JSON.stringify(stats));
     }
+
+    // 同步每題作答紀錄到 Supabase；localStorage 仍保留作為備援。
+    async function saveQuestionToSupabase(question, isCorrect, questionType) {
+        try {
+            if (typeof supabaseClient === "undefined") return;
+
+            const { data: { user }, error: userError } =
+                await supabaseClient.auth.getUser();
+
+            if (userError || !user) {
+                console.warn("尚未登入，略過 Supabase 同步。");
+                return;
+            }
+
+            const questionText = String(question?.["題目"] || "")
+                .replace(/<[^>]*>/g, "")
+                .trim();
+            if (!questionText) return;
+
+            const subject = question?.__subject || "其他科目";
+            const questionId = subject + "||" + questionText;
+
+            const { data: oldRow, error: readError } =
+                await supabaseClient
+                    .from("question_stats")
+                    .select("attempts, correct, wrong, correct_streak")
+                    .eq("user_id", user.id)
+                    .eq("question_id", questionId)
+                    .maybeSingle();
+
+            if (readError) {
+                console.error("讀取 Supabase 紀錄失敗：", readError);
+                return;
+            }
+
+            const attempts = Number(oldRow?.attempts || 0) + 1;
+            const correct = Number(oldRow?.correct || 0) + (isCorrect ? 1 : 0);
+            const wrong = Number(oldRow?.wrong || 0) + (isCorrect ? 0 : 1);
+            const correctStreak = isCorrect
+                ? Number(oldRow?.correct_streak || 0) + 1
+                : 0;
+
+            const { error: saveError } =
+                await supabaseClient
+                    .from("question_stats")
+                    .upsert({
+                        user_id: user.id,
+                        question_id: questionId,
+                        subject: subject,
+                        question_type: questionType || "",
+                        attempts: attempts,
+                        correct: correct,
+                        wrong: wrong,
+                        correct_streak: correctStreak,
+                        last_answered_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: "user_id,question_id"
+                    });
+
+            if (saveError) {
+                console.error("寫入 Supabase 失敗：", saveError);
+                return;
+            }
+
+            console.log("✅ 已同步 Supabase：", questionText);
+        } catch (error) {
+            console.error("Supabase 同步發生錯誤：", error);
+        }
+    }
+
     function recordQuestionResult(question, correct, questionType) {
         if (!question || !question["題目"]) return;
         const subject = question.__subject || "其他科目";
@@ -5262,6 +5346,9 @@ body.v40-night #selectedSubjectTestPanel .subject-group-academic {
             stats[key].correctStreak = 0;
         }
         saveErrorStats(stats);
+
+        // 雲端同步（不影響原本 localStorage）
+        void saveQuestionToSupabase(question, correct, questionType);
     }
     function findQuestionData(record) {
         try {
