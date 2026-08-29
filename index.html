@@ -20,145 +20,192 @@ const supabaseClient = supabase.createClient(
 </script>
 
 <script>
+/* ===== Supabase：帳號／名稱／密碼登入註冊（Email 僅作為 Supabase 內部識別，不顯示給使用者） ===== */
+function normalizeUsername(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function usernameToAuthEmail(username) {
+  return normalizeUsername(username) + "@exam.local";
+}
+
+function validateUsername(username) {
+  return /^[a-z0-9._-]{3,32}$/.test(username);
+}
+
+function setLoginStatus(message, isError = false) {
+  const el = document.getElementById("loginStatus");
+  if (!el) return;
+  el.textContent = message;
+  el.style.color = isError ? "#c62828" : "#2e7d32";
+}
+
+function showLoginMode(mode) {
+  const loginForm = document.getElementById("loginForm");
+  const registerForm = document.getElementById("registerForm");
+  if (!loginForm || !registerForm) return;
+
+  const isRegister = mode === "register";
+  loginForm.style.display = isRegister ? "none" : "block";
+  registerForm.style.display = isRegister ? "block" : "none";
+  setLoginStatus("");
+}
+
 async function loginUser() {
+  const username = normalizeUsername(document.getElementById("loginUsername")?.value);
+  const password = document.getElementById("loginPassword")?.value || "";
 
-  const email =
-    document.getElementById("loginEmail").value.trim();
-
-  const password =
-    document.getElementById("loginPassword").value;
-
-  const status =
-    document.getElementById("loginStatus");
-
-  if (!email || !password) {
-    status.textContent = "請輸入 Email 和密碼";
+  if (!username || !password) {
+    setLoginStatus("請輸入帳號和密碼", true);
+    return;
+  }
+  if (!validateUsername(username)) {
+    setLoginStatus("帳號需 3～32 碼，只能使用英文、數字、.、_、-", true);
     return;
   }
 
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailPattern.test(email)) {
-    status.textContent = "Email 格式不正確，例如：name@example.com";
-    return;
-  }
+  setLoginStatus("登入中...");
 
-  status.textContent = "登入中...";
-
-  const { data, error } =
-    await supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    });
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: usernameToAuthEmail(username),
+    password
+  });
 
   if (error) {
     console.error(error);
-    status.textContent =
-      "登入失敗：" + error.message;
+    setLoginStatus("登入失敗：帳號或密碼錯誤", true);
     return;
   }
-
-  status.textContent = "登入成功！";
 
   document.body.classList.add("supabase-authenticated");
+  setLoginStatus("登入成功！");
   console.log("目前使用者：", data.user);
-
+  await refreshUserProfile();
 }
-</script>
 
-<script>
 async function registerUser() {
+  const name = String(document.getElementById("registerName")?.value || "").trim();
+  const username = normalizeUsername(document.getElementById("registerUsername")?.value);
+  const password = document.getElementById("registerPassword")?.value || "";
+  const confirmPassword = document.getElementById("registerPasswordConfirm")?.value || "";
 
-  const email =
-    document.getElementById("loginEmail").value.trim();
-
-  const password =
-    document.getElementById("loginPassword").value;
-
-  const status =
-    document.getElementById("loginStatus");
-
-  if (!email || !password) {
-    status.textContent = "請輸入 Email 和密碼";
+  if (!name || !username || !password || !confirmPassword) {
+    setLoginStatus("請完整填寫名稱、帳號、密碼和確認密碼", true);
     return;
   }
-
-  // 先做基本 Email 格式檢查，避免 Supabase 回傳 invalid format。
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailPattern.test(email)) {
-    status.textContent = "Email 格式不正確，例如：name@example.com";
+  if (!validateUsername(username)) {
+    setLoginStatus("帳號需 3～32 碼，只能使用英文、數字、.、_、-", true);
     return;
   }
-
   if (password.length < 6) {
-    status.textContent = "密碼至少需要 6 個字元";
+    setLoginStatus("密碼至少需要 6 個字元", true);
+    return;
+  }
+  if (password !== confirmPassword) {
+    setLoginStatus("兩次輸入的密碼不一致", true);
     return;
   }
 
-  status.textContent = "註冊中...";
+  setLoginStatus("註冊中...");
 
-  const { data, error } =
-    await supabaseClient.auth.signUp({
-      email,
-      password
-    });
+  const authEmail = usernameToAuthEmail(username);
+  const { data, error } = await supabaseClient.auth.signUp({
+    email: authEmail,
+    password,
+    options: {
+      data: {
+        name,
+        username
+      }
+    }
+  });
 
   if (error) {
     console.error(error);
-    status.textContent = "註冊失敗：" + error.message;
+    setLoginStatus("註冊失敗：" + (error.message || "請稍後再試"), true);
+    return;
+  }
+
+  if (!data.user) {
+    setLoginStatus("註冊失敗：沒有建立使用者", true);
+    return;
+  }
+
+  // 需要先在 Supabase 建立 public.profiles（見頁面下方說明）
+  let profileError = null;
+  if (data.session) {
+    const result = await supabaseClient.from("profiles").upsert({
+      id: data.user.id,
+      name,
+      username,
+      created_at: new Date().toISOString()
+    }, { onConflict: "id" });
+    profileError = result.error;
+  }
+
+  if (profileError) {
+    console.error(profileError);
+    setLoginStatus("帳號已建立，但 profiles 建立失敗：" + profileError.message, true);
     return;
   }
 
   if (data.session) {
-    status.textContent = "註冊成功，已登入！";
     document.body.classList.add("supabase-authenticated");
+    setLoginStatus("註冊成功，已登入！");
+    await refreshUserProfile();
   } else {
-    status.textContent = "註冊成功！請先到 Email 完成驗證，再登入。";
+    setLoginStatus("帳號已建立；請到 Supabase 關閉 Confirm email，之後即可直接用帳號登入。", false);
   }
 }
-</script>
 
-<script>
+async function refreshUserProfile() {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile, error } = await supabaseClient
+    .from("profiles")
+    .select("id,name,username,created_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("讀取 profiles 失敗：", error);
+    return null;
+  }
+
+  const panel = document.getElementById("loginPanel");
+  if (panel && profile) {
+    panel.innerHTML = `
+      <div style="font-size:20px;font-weight:bold;text-align:center">✅ 已登入</div>
+      <div style="text-align:center;margin-top:8px">${profile.name || ""}</div>
+      <div style="text-align:center;margin-top:4px;font-size:14px;color:#666">帳號：${profile.username || ""}</div>
+      <button type="button" onclick="logoutUser()" style="display:block;margin:12px auto 0;padding:9px 18px;cursor:pointer">登出</button>
+    `;
+  }
+  return profile;
+}
+
+async function logoutUser() {
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    setLoginStatus("登出失敗：" + error.message, true);
+    return;
+  }
+  document.body.classList.remove("supabase-authenticated");
+  location.reload();
+}
+
 async function checkLogin() {
-
-  const {
-    data: { user }
-  } = await supabaseClient.auth.getUser();
-
+  const { data: { user } } = await supabaseClient.auth.getUser();
   if (user) {
-
     document.body.classList.add("supabase-authenticated");
     console.log("已登入：", user.email);
-
-    const panel =
-      document.getElementById("loginPanel");
-
-    if (panel) {
-      panel.innerHTML = `
-        <div style="
-          text-align:center;
-          font-weight:bold;
-        ">
-          ✅ 已登入
-        </div>
-
-        <div style="
-          text-align:center;
-          margin-top:6px;
-        ">
-          ${user.email}
-        </div>
-      `;
-    }
-
+    await refreshUserProfile();
   } else {
-
     document.body.classList.remove("supabase-authenticated");
     console.log("目前尚未登入");
-
   }
 }
-
-checkLogin();
 </script>
 <style id="homepage-mode-row-bg">
 /* 首頁「科目／刷題模式／測驗模式」三個區塊，跟隨首頁日夜模式背景 */
@@ -3474,7 +3521,7 @@ body.v40-night #stats-detail-risk .risk-row *{
 </style>
 
 <style id="v40-night-subject-row-fix">
-/* 夜間模式：查看各科狀況的每一列都一起變更 */
+/* 夜間模式：各科狀況的每一列都一起變更 */
 body.v40-night #stats-detail-subjects{
   background:#2b2b2b !important;
   color:#f3e7b3 !important;
@@ -3664,7 +3711,124 @@ body.v40-night .v40-bottom-floating-nav{
 <style id="online-count-style">
 #online-count{position:fixed;top:12px;left:12px;z-index:999999;padding:7px 11px;border-radius:10px;font-size:15px;font-weight:800;line-height:1.2;background:rgba(255,255,255,.88);color:#111;box-shadow:0 2px 10px rgba(0,0,0,.18);pointer-events:none}
 body.night-mode #online-count,.night-mode #online-count,.dark-mode #online-count{background:rgba(30,30,35,.9);color:#fff}
+
+.site-menu-settings{margin-top:6px;padding:9px 10px;border:1px solid #d7dde5;border-radius:8px;background:#f8fafc;color:#475467;font-size:12px;line-height:1.45;}
+.site-menu-settings-title{font-weight:800;font-size:13px;margin-bottom:4px;color:#344054;}
+.site-menu-settings-row{padding:2px 0;}
+.site-menu-settings-note{margin-top:4px;color:#667085;}
+body.v40-night .site-menu-settings{background:#26313d;border-color:#374151;color:#d9e1ea;}
+body.v40-night .site-menu-settings-title{color:#f2f5f8;}
+body.v40-night .site-menu-settings-note{color:#cbd5e1;}
 @media(max-width:600px){#online-count{top:8px;left:8px;font-size:13px;padding:6px 9px}}
+</style>
+
+<style id="site-menu-bg-settings-css">
+.site-menu{
+  position:fixed;top:14px;right:14px;z-index:100000;
+  font-family:"Microsoft JhengHei",system-ui,sans-serif;
+  display:none;
+}
+body.supabase-authenticated .site-menu{display:block;}
+.site-menu-toggle{
+  width:46px;height:46px;margin:0;padding:0!important;
+  border:1px solid rgba(0,0,0,.12);border-radius:12px;
+  background:rgba(255,255,255,.92);color:#1f2937;
+  box-shadow:0 4px 16px rgba(0,0,0,.14);font-size:22px;cursor:pointer;
+}
+.site-menu-panel{
+  position:absolute;right:0;top:54px;width:min(310px,calc(100vw - 28px));
+  padding:12px;background:rgba(255,255,255,.98);color:#253044;
+  border:1px solid #d7dde6;border-radius:14px;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);box-sizing:border-box;
+}
+.site-menu-title{font-size:18px;font-weight:800;padding:2px 4px 4px;}
+.site-menu-user{font-size:13px;color:#667085;padding:0 4px 8px;border-bottom:1px solid #edf0f3;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.site-menu-item{display:block;width:100%;margin:4px 0!important;padding:9px 11px!important;text-align:left;border:0;border-radius:9px;background:#f6f8fa;color:#243447;font-size:14px!important;cursor:pointer;}
+.site-menu-item:hover{background:#edf2f7;}
+.site-menu-logout{background:#fff0f0;color:#b42318;}
+.bg-settings-panel{margin-top:10px;padding-top:10px;border-top:1px solid #edf0f3;}
+.bg-settings-title{font-weight:800;font-size:15px;margin-bottom:8px;}
+.custom-color-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px;font-size:14px;font-weight:700;}
+.custom-color-row input{width:52px;height:34px;padding:0;border:1px solid #d9dee6;border-radius:7px;background:transparent;cursor:pointer;}
+.bg-reset-btn{width:100%;margin:9px 0 0!important;padding:8px 10px!important;border:0;border-radius:8px;background:#f1f3f5;color:#344054;font-size:13px!important;cursor:pointer;}
+.bg-settings-note{margin-top:7px;font-size:11px;line-height:1.4;color:#667085;}
+body.v40-night .site-menu-toggle{background:#1c232c;color:#f2f5f8;border-color:#374151;}
+body.v40-night .site-menu-panel{background:#1c232c;color:#f2f5f8;border-color:#374151;}
+body.v40-night .site-menu-user,body.v40-night .bg-settings-panel{border-color:#374151;}
+body.v40-night .site-menu-user,body.v40-night .bg-settings-note{color:#cbd5e1;}
+body.v40-night .site-menu-item{background:#26313d;color:#f2f5f8;}
+body.v40-night .site-menu-item:hover{background:#303c49;}
+body.v40-night .site-menu-logout{background:#40282d;color:#ffd4d8;}
+body.v40-night .bg-reset-btn{background:#26313d;color:#f2f5f8;}
+@media(max-width:600px){
+  .site-menu{top:9px;right:9px;}
+  .site-menu-toggle{width:42px;height:42px;font-size:20px;}
+  .site-menu-panel{top:49px;}
+}
+</style>
+
+
+<style id="v40-home-countdown-css">
+.v40-home-exam-countdown{
+  width:calc(100% - 24px);
+  max-width:1100px;
+  margin:10px auto 12px;
+  padding:10px 14px;
+  box-sizing:border-box;
+  border-radius:10px;
+  background:#fff4d6;
+  color:#5a4a1f;
+  text-align:center;
+  font-size:18px;
+  font-weight:700;
+}
+body.v40-night .v40-home-exam-countdown{
+  background:#3a321c !important;
+  color:#fff2b8 !important;
+}
+</style>
+
+
+<style id="v40-home-exam-countdown-css">
+.v40-home-exam-countdown{
+  width:calc(100% - 24px);
+  max-width:1100px;
+  margin:10px auto 12px;
+  padding:10px 14px;
+  box-sizing:border-box;
+  border-radius:10px;
+  background:#fff4d6;
+  color:#5a4a1f;
+  text-align:center;
+  font-size:18px;
+  font-weight:700;
+}
+body.v40-night .v40-home-exam-countdown{
+  background:#3a321c !important;
+  color:#fff2b8 !important;
+}
+</style>
+
+<style id="v40-independent-stats-theme">
+body.v40-night #homepage-error-rate,
+body.v40-night #stats-detail-subjects,
+body.v40-night #stats-detail-risk,
+body.v40-night #stats-ranking-panel{
+  background:#2b2b2b !important;
+  color:#f3e7b3 !important;
+  border-color:#4b4b4b !important;
+}
+body.v40-night #homepage-error-rate .stat-card{
+  background:#343434 !important;
+  color:#f3e7b3 !important;
+}
+body.v40-night #homepage-error-rate .stat-label,
+body.v40-night #homepage-error-rate .stat-value,
+body.v40-night #stats-detail-subjects .subject-row,
+body.v40-night #stats-detail-risk .risk-row,
+body.v40-night #stats-ranking-panel div{
+  color:#f3e7b3 !important;
+}
 </style>
 </head>
 <style>
@@ -3697,6 +3861,90 @@ body.night-mode #online-count,.night-mode #online-count,.dark-mode #online-count
         100% { transform: translateX(-100%); }
     }
 </style>
+<style id="v40-remove-floating-theme-button">
+#v40-night-toggle { display:none !important; }
+</style>
+
+<style id="login-panel-alignment-fix">
+/* 登入介面：統一左右寬度與間距，避免受全站 button margin 影響 */
+#loginPanel{
+  width: min(380px, calc(100vw - 32px)) !important;
+  max-width: 380px !important;
+  margin: 28px auto !important;
+  padding: 22px !important;
+  box-sizing: border-box !important;
+  background: #17131f !important;
+  border: 1px solid #5b4a72 !important;
+  border-radius: 14px !important;
+  color: #eee8f5 !important;
+}
+#loginPanel > div,
+#loginPanel #loginForm,
+#loginPanel #registerForm{
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+#loginPanel input{
+  display:block !important;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  margin:0 0 10px 0 !important;
+  padding:11px 12px !important;
+  box-sizing:border-box !important;
+  border:1px solid #594b68 !important;
+  border-radius:8px !important;
+  background:#25202d !important;
+  color:#f3edf8 !important;
+}
+#loginPanel input:focus{
+  outline:none !important;
+  border-color:#9b7fc7 !important;
+  box-shadow:0 0 0 2px rgba(155,127,199,.18) !important;
+}
+#loginPanel button{
+  display:block !important;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  margin:0 0 10px 0 !important;
+  padding:11px 12px !important;
+  box-sizing:border-box !important;
+  border:1px solid #665278 !important;
+  border-radius:8px !important;
+  background:#3a3044 !important;
+  color:#f5eefb !important;
+  text-align:center !important;
+  font-size:18px !important;
+  line-height:1.3 !important;
+  cursor:pointer !important;
+}
+#loginPanel button:hover{
+  background:#4a3b57 !important;
+}
+#loginPanel #loginForm button:last-child,
+#loginPanel #registerForm button:last-child{
+  margin-top:2px !important;
+}
+#loginPanel #loginStatus{
+  width:100% !important;
+  min-height:24px !important;
+  margin:4px 0 0 !important;
+  text-align:center !important;
+  box-sizing:border-box !important;
+}
+@media (max-width:700px){
+  #loginPanel{
+    width:calc(100vw - 24px) !important;
+    padding:18px !important;
+  }
+  #loginPanel input,
+  #loginPanel button{
+    font-size:17px !important;
+    min-height:46px !important;
+  }
+}
+</style>
 <body>
 <style id="supabase-login-gate-css">
 /* 未登入：只顯示登入畫面；登入成功後才顯示首頁內容 */
@@ -3712,76 +3960,117 @@ body.supabase-authenticated #loginPanel {
 }
 </style>
 <div id="loginPanel" style="
-  max-width:360px;
+  max-width:380px;
   margin:20px auto;
-  padding:16px;
+  padding:18px;
   border:1px solid #ccc;
   border-radius:12px;
   background:#fff;
 ">
 
-  <div style="
-    font-size:20px;
-    font-weight:bold;
-    text-align:center;
-    margin-bottom:12px;
-  ">
-    🔐 測驗系統登入／註冊
+  <div style="font-size:20px;font-weight:bold;text-align:center;margin-bottom:14px;">
+    🔐 測驗系統
   </div>
 
-  <input
-    id="loginEmail"
-    type="email"
-    placeholder="Email"
-    style="
-      width:100%;
-      box-sizing:border-box;
-      padding:10px;
-      margin-bottom:8px;
-    "
-  >
-
-  <input
-    id="loginPassword"
-    type="password"
-    placeholder="密碼"
-    style="
-      width:100%;
-      box-sizing:border-box;
-      padding:10px;
-      margin-bottom:8px;
-    "
-  >
-
-  <div style="display:flex;gap:8px;margin-top:8px;">
-    <button
-      type="button"
-      onclick="loginUser()"
-      style="flex:1;padding:10px;cursor:pointer;"
-    >
-      登入
-    </button>
-
-    <button
-      type="button"
-      onclick="registerUser()"
-      style="flex:1;padding:10px;cursor:pointer;"
-    >
-      註冊
-    </button>
+  <div id="loginForm">
+    <input id="loginUsername" type="text" autocomplete="username" placeholder="帳號" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
+    <input id="loginPassword" type="password" autocomplete="current-password" placeholder="密碼" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
+    <button type="button" onclick="loginUser()" style="width:100%;padding:10px;cursor:pointer;">登入</button>
+    <button type="button" onclick="showLoginMode('register')" style="width:100%;padding:10px;margin-top:8px;cursor:pointer;">建立新帳號</button>
   </div>
 
-  <div
-    id="loginStatus"
-    style="
-      margin-top:8px;
-      text-align:center;
-      font-size:20px;
-    "
-  ></div>
+  <div id="registerForm" style="display:none;">
+    <input id="registerName" type="text" autocomplete="name" placeholder="名稱" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
+    <input id="registerUsername" type="text" autocomplete="username" placeholder="帳號（3～32 碼：英文、數字、.、_、-）" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
+    <input id="registerPassword" type="password" autocomplete="new-password" placeholder="密碼（至少 6 碼）" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
+    <input id="registerPasswordConfirm" type="password" autocomplete="new-password" placeholder="確認密碼" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
+    <button type="button" onclick="registerUser()" style="width:100%;padding:10px;cursor:pointer;">註冊</button>
+    <button type="button" onclick="showLoginMode('login')" style="width:100%;padding:10px;margin-top:8px;cursor:pointer;">返回登入</button>
+  </div>
 
+  <div id="loginStatus" style="margin-top:10px;text-align:center;font-size:14px;min-height:20px;"></div>
 </div>
 
+<!-- 功能表：登入後顯示 -->
+<div id="siteMenu" class="site-menu" aria-label="功能表">
+  <button id="siteMenuToggle" type="button" class="site-menu-toggle" aria-expanded="false" aria-controls="siteMenuPanel">☰</button>
+  <div id="siteMenuPanel" class="site-menu-panel" hidden>
+    <div class="site-menu-title">☰ 功能表</div>
+    <div id="siteMenuUser" class="site-menu-user"></div>
+    <button type="button" class="site-menu-item" id="menuStatsBtn">📊 正確率</button>
+    <button type="button" class="site-menu-item" id="menuSubjectsBtn">📚 各科狀況</button>
+    <button type="button" class="site-menu-item" id="menuRiskBtn">⚠️ 錯題</button>
+    <button type="button" class="site-menu-item" id="menuRankBtn">🏆 使用者答題排行</button>
+    <button type="button" class="site-menu-item" id="menuSettingsBtn">⚙️ 設定</button>
+<button type="button" class="site-menu-item" id="menuAccountBtn">👤 帳號設定</button>
+    <button type="button" class="site-menu-item" id="menuThemeBtn">🌙 日／夜模式</button>
+    <button type="button" class="site-menu-item site-menu-logout" id="menuLogoutBtn">🔐 登入／登出</button>
+    <div id="menuSettingsPanel" class="site-menu-settings" hidden>
+      <div class="site-menu-settings-title">⚙️ 設定</div>
+      <div class="site-menu-settings-row">網站版本：4.0V</div>
+      <div class="site-menu-settings-row">📅 第四階段測驗：2026/11/07</div>
+      <div class="site-menu-settings-note">日／夜模式可由功能表切換；測驗紀錄維持原有儲存方式。</div>
+    </div>
+
+    <div id="menuAccountPanel" class="site-menu-settings menu-account-settings" hidden>
+      <div class="account-profile-hero">
+        <div id="accountAvatar" class="account-avatar">U</div>
+        <div class="account-profile-main">
+          <div class="account-profile-eyebrow">個人資料</div>
+          <div id="accountDisplayName" class="account-profile-name">使用者</div>
+          <div id="accountDisplayUsername" class="account-profile-username">@username</div>
+        </div>
+      </div>
+
+      <div class="account-profile-stats">
+        <div class="account-profile-stat">
+          <div id="accountTotalAttempts" class="account-profile-stat-value">0</div>
+          <div class="account-profile-stat-label">作答</div>
+        </div>
+        <div class="account-profile-stat">
+          <div id="accountAccuracy" class="account-profile-stat-value">0%</div>
+          <div class="account-profile-stat-label">正確率</div>
+        </div>
+        <div class="account-profile-stat">
+          <div id="accountBestStreak" class="account-profile-stat-value">0</div>
+          <div class="account-profile-stat-label">連續答對</div>
+        </div>
+      </div>
+
+      <div class="account-section-title">基本資料</div>
+      <div class="account-setting-row">
+        <label for="accountNameInput">顯示名稱</label>
+        <input id="accountNameInput" type="text" autocomplete="name" placeholder="輸入顯示名稱">
+      </div>
+      <div class="account-setting-row">
+        <label for="accountUsernameInput">帳號</label>
+        <input id="accountUsernameInput" type="text" readonly>
+      </div>
+      <button type="button" class="account-save-btn" id="accountSaveProfileBtn">儲存個人資料</button>
+
+      <div class="account-divider"></div>
+
+      <div class="account-section-title">🔐 安全設定</div>
+      <div class="account-setting-row">
+        <label for="accountCurrentPassword">目前密碼</label>
+        <input id="accountCurrentPassword" type="password" autocomplete="current-password" placeholder="目前密碼">
+      </div>
+      <div class="account-setting-row">
+        <label for="accountNewPassword">新密碼</label>
+        <input id="accountNewPassword" type="password" autocomplete="new-password" placeholder="至少 6 碼">
+      </div>
+      <div class="account-setting-row">
+        <label for="accountConfirmPassword">確認新密碼</label>
+        <input id="accountConfirmPassword" type="password" autocomplete="new-password" placeholder="再次輸入新密碼">
+      </div>
+      <button type="button" class="account-save-btn" id="accountChangePasswordBtn">修改密碼</button>
+
+      <div class="account-divider"></div>
+      <button type="button" class="account-danger-btn" id="accountSignOutBtn">🚪 登出此帳號</button>
+      <div id="accountSettingsStatus" class="account-settings-status" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
 
 <div id="online-count" aria-live="polite">🟡 在線人數：連線中…</div>
 
@@ -3795,6 +4084,7 @@ body.supabase-authenticated #loginPanel {
 <h1>有做錯麻煩再跟我說謝謝!</h1>
 <br/><hr/>
 </div>
+<div id="v40-home-exam-countdown" class="v40-home-exam-countdown" aria-live="polite">📅 第四階段測驗：2026/11/07　｜　距離測驗還有：70天</div>
 <div id="container">
 </div>
 <style>
@@ -4465,7 +4755,10 @@ function showLockMessage(score) {
     try{
       if(typeof cleanPage==="function") cleanPage();
       if(typeof showInitialPage==="function"){
-        showInitialPage();
+        
+
+
+showInitialPage();
         window.scrollTo({top:0,behavior:"smooth"});
         return;
       }
@@ -4580,39 +4873,6 @@ function showLockMessage(score) {
 })();
 </script>
 
-<script id="v40-night-mode-js">
-(function(){
-  const KEY="v40-night-mode";
-  function apply(){
-    const on=localStorage.getItem(KEY)==="1";
-    document.body.classList.toggle("v40-night",on);
-    const b=document.getElementById("v40-night-toggle");
-    if(b) b.textContent=on ? "☀ 日間模式" : "🌙 夜間模式";
-  }
-  function addButton(){
-    if(document.getElementById("v40-night-toggle")) return;
-    const b=document.createElement("button");
-    b.id="v40-night-toggle";
-    b.className="v40-night-toggle";
-    b.type="button";
-    b.addEventListener("click",function(){
-      const on=document.body.classList.toggle("v40-night");
-      localStorage.setItem(KEY,on?"1":"0");
-      b.textContent=on ? "☀ 日間模式" : "🌙 夜間模式";
-    });
-    document.body.appendChild(b);
-    apply();
-  }
-  function init(){
-    addButton();
-    apply();
-  }
-  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init);
-  else init();
-  // 原頁面會動態重建 container，但不會重建 body；只做輕量確認。
-  setInterval(addButton,1000);
-})();
-</script>
 
 <script id="v40-night-result-strong-js">
 (function(){
@@ -4958,6 +5218,356 @@ body.v40-night #selectedSubjectTestPanel .subject-group-academic {
   }
 }
 </style>
+<style id="v40-user-ranking-css">
+.user-rank-card{
+  padding:10px 11px;margin:7px 0;border:1px solid #dde2ea;border-radius:10px;
+  background:#fff;
+}
+.user-rank-main{display:flex;align-items:center;gap:8px;}
+.user-rank-no{width:34px;flex:0 0 34px;text-align:center;font-size:18px;font-weight:900;}
+.user-rank-name{min-width:0;flex:1;font-weight:800;color:#344054;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-rank-accuracy{font-size:17px;font-weight:900;color:#4c3f93;}
+.user-rank-detail{
+  display:flex;gap:12px;flex-wrap:wrap;margin:5px 0 0 42px;color:#667085;font-size:12px;
+}
+body.v40-night .user-rank-card{background:#222b36;border-color:#465362;}
+body.v40-night .user-rank-name{color:#f3e7b3;}
+body.v40-night .user-rank-accuracy{color:#c9bcff;}
+body.v40-night .user-rank-detail{color:#cbd5e1;}
+</style>
+<style id="v40-account-settings-css">
+.menu-account-settings{
+  margin-top:8px;padding:10px;border:1px solid #d8deea;border-radius:14px;
+  background:#f7f8fc;color:#344054;line-height:1.45;box-shadow:0 8px 20px rgba(16,24,40,.08);
+}
+.account-profile-hero{
+  display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;
+  background:linear-gradient(135deg,#596582 0%,#4a3c70 58%,#68409a 100%);color:#fff;
+}
+.account-avatar{
+  width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  flex:0 0 58px;background:linear-gradient(135deg,#b197ff 0%,#7656d8 100%);
+  border:2px solid rgba(255,255,255,.9);font-weight:900;font-size:25px;
+  box-shadow:0 5px 14px rgba(0,0,0,.22);
+}
+.account-profile-main{min-width:0;}
+.account-profile-eyebrow{font-size:10px;letter-spacing:.8px;opacity:.82;}
+.account-profile-name{font-size:22px;font-weight:900;line-height:1.15;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.account-profile-username{font-size:12px;opacity:.86;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.account-profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:9px 0;}
+.account-profile-stat{padding:8px 4px;text-align:center;border:1px solid #d8deea;border-radius:9px;background:#eef1f7;}
+.account-profile-stat-value{font-size:17px;font-weight:900;color:#2f3550;}
+.account-profile-stat-label{font-size:11px;color:#667085;margin-top:1px;}
+.account-section-title{font-size:13px;font-weight:900;color:#344054;margin:10px 0 6px;}
+.account-setting-row{display:flex;flex-direction:column;gap:5px;margin:8px 0;}
+.account-setting-row label{font-size:12px;font-weight:800;color:#667085;}
+.account-setting-row input{
+  width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cfd6e2;border-radius:8px;
+  background:#fff;color:#243447;font-size:14px;outline:none;
+}
+.account-setting-row input:focus{border-color:#7666b8;box-shadow:0 0 0 3px rgba(118,102,184,.13);}
+.account-setting-row input[readonly]{background:#eef1f5;color:#667085;}
+.account-save-btn,.account-danger-btn{
+  width:100%;margin:5px 0!important;padding:9px 10px!important;border:0;border-radius:8px;
+  font-size:13px!important;font-weight:800;cursor:pointer;
+}
+.account-save-btn{background:#e8e4ff;color:#493f91;}
+.account-save-btn:hover{background:#dbd5ff;}
+.account-danger-btn{background:#fae7ea;color:#b42318;}
+.account-danger-btn:hover{background:#f5d4d9;}
+.account-divider{height:1px;background:#e8ebf0;margin:12px 0;}
+.account-settings-status{min-height:20px;margin-top:7px;font-size:12px;line-height:1.4;color:#667085;}
+body.v40-night .menu-account-settings{border-color:#3f4a5a;background:#1e2630;color:#e5e7eb;box-shadow:0 8px 20px rgba(0,0,0,.2);}
+body.v40-night .account-profile-hero{background:linear-gradient(135deg,#46516a 0%,#3d3454 58%,#4f3673 100%);}
+body.v40-night .account-profile-stat{background:#28323e;border-color:#495666;}
+body.v40-night .account-profile-stat-value{color:#f3e7b3;}
+body.v40-night .account-profile-stat-label,.v40-night .account-section-title{color:#cbd5e1;}
+body.v40-night .account-setting-row label{color:#cbd5e1;}
+body.v40-night .account-setting-row input{background:#29323d;color:#fff;border-color:#4b5867;}
+body.v40-night .account-setting-row input[readonly]{background:#202833;color:#94a3b8;}
+body.v40-night .account-save-btn{background:#3a345e;color:#f3e7b3;}
+body.v40-night .account-danger-btn{background:#4a2c34;color:#ffd6da;}
+body.v40-night .account-settings-status{color:#cbd5e1;}
+body.v40-night .account-divider{background:#374151;}
+@media (max-width:480px){
+  .account-profile-name{font-size:20px;}
+  .account-profile-stats{gap:6px;}
+  .account-profile-stat-value{font-size:16px;}
+}
+</style>
+
+<script id="site-menu-theme-js">
+(function(){
+  function getSavedTheme(){
+    return localStorage.getItem("v40-night-mode") === "1";
+  }
+
+  function applyTheme(){
+    const on = getSavedTheme();
+    document.body.classList.toggle("v40-night", on);
+    const btn = document.getElementById("menuThemeBtn");
+    if(btn) btn.textContent = on ? "☀️ 日間模式" : "🌙 夜間模式";
+  }
+
+  function openPanel(show){
+    const panel=document.getElementById("siteMenuPanel");
+    const toggle=document.getElementById("siteMenuToggle");
+    if(!panel||!toggle) return;
+    panel.hidden=!show;
+    toggle.setAttribute("aria-expanded", String(show));
+  }
+
+  function init(){
+    applyTheme();
+
+    const toggle=document.getElementById("siteMenuToggle");
+    const panel=document.getElementById("siteMenuPanel");
+    if(!toggle||!panel) return;
+
+    toggle.addEventListener("click",()=>openPanel(panel.hidden));
+    document.addEventListener("click",e=>{
+      const menu=document.getElementById("siteMenu");
+      if(menu && !menu.contains(e.target)) openPanel(false);
+    });
+
+    document.getElementById("menuThemeBtn")?.addEventListener("click",()=>{
+      const next = document.body.classList.toggle("v40-night");
+      localStorage.setItem("v40-night-mode", next ? "1" : "0");
+      applyTheme();
+    });
+
+    function openStatsSection(sectionId){
+      if(typeof updateHomepageErrorRate!=="function") return;
+      updateHomepageErrorRate();
+      const ids=["homepage-error-rate","stats-detail-subjects","stats-detail-risk","stats-ranking-panel"];
+      ids.forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.style.display = (id === sectionId) ? "block" : "none";
+      });
+      const target=document.getElementById(sectionId) || document.getElementById("homepage-error-rate");
+      if(target) setTimeout(()=>target.scrollIntoView({behavior:"smooth",block:"start"}),80);
+    }
+
+    document.getElementById("menuStatsBtn")?.addEventListener("click",()=>{
+      document.getElementById("menuAccountPanel")?.setAttribute("hidden","");
+      openPanel(false);
+      openStatsSection("homepage-error-rate");
+    });
+
+    document.getElementById("menuSubjectsBtn")?.addEventListener("click",()=>{
+      document.getElementById("menuAccountPanel")?.setAttribute("hidden","");
+      document.getElementById("menuSettingsPanel")?.setAttribute("hidden","");
+      openPanel(false);
+      openStatsSection("stats-detail-subjects");
+    });
+
+    document.getElementById("menuRiskBtn")?.addEventListener("click",()=>{
+      document.getElementById("menuAccountPanel")?.setAttribute("hidden","");
+      openPanel(false);
+      openStatsSection("stats-detail-risk");
+    });
+
+    document.getElementById("menuRankBtn")?.addEventListener("click",()=>{
+      document.getElementById("menuAccountPanel")?.setAttribute("hidden","");
+      openPanel(false);
+      openStatsSection("stats-ranking-panel");
+    });
+
+    function refreshAccountCard(){
+      try{
+        const stats = (typeof getErrorStats === "function") ? getErrorStats() : {};
+        const rows = Object.values(stats || {});
+        let attempts=0, wrong=0, bestStreak=0;
+        rows.forEach(r=>{
+          attempts += Math.max(0, Number(r.attempts)||0);
+          wrong += Math.max(0, Number(r.wrong)||0);
+          bestStreak = Math.max(bestStreak, Math.max(0, Number(r.correctStreak)||0));
+        });
+        const correct=Math.max(0, attempts-wrong);
+        const accuracy=attempts ? (correct/attempts*100) : 0;
+        const a=document.getElementById("accountTotalAttempts");
+        const b=document.getElementById("accountAccuracy");
+        const c=document.getElementById("accountBestStreak");
+        if(a) a.textContent=attempts.toLocaleString();
+        if(b) b.textContent=accuracy.toFixed(1)+"%";
+        if(c) c.textContent=bestStreak.toLocaleString();
+      }catch(e){ console.warn("更新帳號統計失敗",e); }
+    }
+
+    async function loadAccountCard(){
+      const nameInput=document.getElementById("accountNameInput");
+      const usernameInput=document.getElementById("accountUsernameInput");
+      const status=document.getElementById("accountSettingsStatus");
+      if(!nameInput || !usernameInput) return;
+
+      const {data:{user}}=await supabaseClient.auth.getUser();
+      if(!user) return;
+
+      try{
+        const {data:profile,error}=await supabaseClient
+          .from("profiles").select("id,name,username").eq("id",user.id).maybeSingle();
+        if(error) throw error;
+
+        const displayName=profile?.name || profile?.username || "使用者";
+        const username=profile?.username || "";
+        nameInput.value=profile?.name || "";
+        usernameInput.value=username;
+
+        const nameEl=document.getElementById("accountDisplayName");
+        const userEl=document.getElementById("accountDisplayUsername");
+        const avatar=document.getElementById("accountAvatar");
+        if(nameEl) nameEl.textContent=displayName;
+        if(userEl) userEl.textContent=username ? "@"+username : "";
+        if(avatar) avatar.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
+
+        refreshAccountCard();
+        if(status) status.textContent="";
+      }catch(e){
+        console.warn("讀取帳號設定失敗",e);
+        if(status) status.textContent="讀取帳號資料失敗";
+      }
+    }
+
+    function setAccountStatus(message,isError=false){
+      const status=document.getElementById("accountSettingsStatus");
+      if(!status) return;
+      status.textContent=message;
+      status.style.color=isError ? "#b42318" : "#2e7d32";
+    }
+
+    document.getElementById("menuSettingsBtn")?.addEventListener("click",()=>{
+      const settings=document.getElementById("menuSettingsPanel");
+      const account=document.getElementById("menuAccountPanel");
+      if(account) account.hidden=true;
+      if(!settings) return;
+      settings.hidden=!settings.hidden;
+    });
+
+    document.getElementById("menuAccountBtn")?.addEventListener("click",()=>{
+      const account=document.getElementById("menuAccountPanel");
+      const settings=document.getElementById("menuSettingsPanel");
+      if(settings) settings.hidden=true;
+      if(!account) return;
+      account.hidden=!account.hidden;
+      if(!account.hidden) loadAccountCard();
+    });
+
+    document.getElementById("accountSaveProfileBtn")?.addEventListener("click",async()=>{
+      const name=(document.getElementById("accountNameInput")?.value||"").trim();
+      if(!name){ setAccountStatus("名稱不可為空白",true); return; }
+
+      const {data:{user}}=await supabaseClient.auth.getUser();
+      if(!user){ setAccountStatus("尚未登入",true); return; }
+
+      setAccountStatus("儲存中...");
+      const {error}=await supabaseClient.from("profiles").update({name}).eq("id",user.id);
+      if(error){
+        console.error(error);
+        setAccountStatus("儲存失敗："+error.message,true);
+        return;
+      }
+      setAccountStatus("個人資料已更新");
+      await loadAccountCard();
+    });
+
+    document.getElementById("accountChangePasswordBtn")?.addEventListener("click",async()=>{
+      const current=document.getElementById("accountCurrentPassword")?.value||"";
+      const next=document.getElementById("accountNewPassword")?.value||"";
+      const confirmPwd=document.getElementById("accountConfirmPassword")?.value||"";
+      if(!current || !next || !confirmPwd){ setAccountStatus("請完整填寫密碼欄位",true); return; }
+      if(next.length<6){ setAccountStatus("新密碼至少需要 6 個字元",true); return; }
+      if(next!==confirmPwd){ setAccountStatus("兩次新密碼不一致",true); return; }
+
+      const {data:{user}}=await supabaseClient.auth.getUser();
+      if(!user){ setAccountStatus("尚未登入",true); return; }
+
+      setAccountStatus("驗證目前密碼中...");
+      const {error:verifyError}=await supabaseClient.auth.signInWithPassword({
+        email:user.email,password:current
+      });
+      if(verifyError){ setAccountStatus("目前密碼不正確",true); return; }
+
+      setAccountStatus("修改密碼中...");
+      const {error:updateError}=await supabaseClient.auth.updateUser({password:next});
+      if(updateError){ setAccountStatus("修改密碼失敗："+updateError.message,true); return; }
+
+      document.getElementById("accountCurrentPassword").value="";
+      document.getElementById("accountNewPassword").value="";
+      document.getElementById("accountConfirmPassword").value="";
+      setAccountStatus("密碼已修改完成");
+    });
+
+    document.getElementById("accountSignOutBtn")?.addEventListener("click",async()=>{
+      if(!confirm("確定要登出目前帳號嗎？")) return;
+      if(typeof logoutUser==="function") await logoutUser();
+    });
+
+    document.getElementById("menuLogoutBtn")?.addEventListener("click",async()=>{
+      if(typeof logoutUser==="function") await logoutUser();
+    });
+
+    const originalRefresh = window.refreshUserProfile;
+    if(typeof originalRefresh === "function") {
+      const wrapped = async function(){
+        const result = await originalRefresh.apply(this, arguments);
+        const userEl=document.getElementById("siteMenuUser");
+        if(userEl && result){ userEl.textContent = (result.name||"") + (result.username?"　帳號："+result.username:""); }
+        return result;
+      };
+      window.refreshUserProfile = wrapped;
+    }
+  }
+
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init);
+  else init();
+})();
+</script>
+
+<script id="v40-home-countdown-js">
+(function(){
+  const target = document.getElementById("v40-home-exam-countdown");
+  if(!target) return;
+  const examDate = new Date(2026,10,7,0,0,0,0);
+  function update(){
+    const now = new Date();
+    const today = new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    const days = Math.max(0, Math.ceil((examDate-today)/86400000));
+    if(days>0){
+      target.textContent = "📅 第四階段測驗：2026/11/07　｜　距離測驗還有："+days+"天";
+    }else if(days===0){
+      target.textContent = "📅 第四階段測驗：2026/11/07　｜　今天就是測驗日！";
+    }else{
+      target.textContent = "📅 第四階段測驗：2026/11/07　｜　測驗已經到了";
+    }
+  }
+  update();
+  setInterval(update,60000);
+})();
+</script>
+
+
+<script id="v40-home-exam-countdown-js">
+(function(){
+  function update(){
+    const target=document.getElementById("v40-home-exam-countdown");
+    if(!target) return;
+    const now=new Date();
+    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    const exam=new Date(2026,10,7);
+    const days=Math.max(0,Math.ceil((exam-today)/86400000));
+    if(days>0){
+      target.textContent="📅 第四階段測驗：2026/11/07　｜　距離測驗還有："+days+"天";
+    }else if(days===0){
+      target.textContent="📅 第四階段測驗：2026/11/07　｜　今天就是測驗日！";
+    }else{
+      target.textContent="📅 第四階段測驗：2026/11/07　｜　測驗已經到了";
+    }
+  }
+  update();
+  setInterval(update,60000);
+})();
+</script>
+
 </body>
 <script>
     //globol settings
@@ -5245,77 +5855,6 @@ body.v40-night #selectedSubjectTestPanel .subject-group-academic {
     function saveErrorStats(stats) {
         localStorage.setItem("questionErrorStats", JSON.stringify(stats));
     }
-
-    // 同步每題作答紀錄到 Supabase；localStorage 仍保留作為備援。
-    async function saveQuestionToSupabase(question, isCorrect, questionType) {
-        try {
-            if (typeof supabaseClient === "undefined") return;
-
-            const { data: { user }, error: userError } =
-                await supabaseClient.auth.getUser();
-
-            if (userError || !user) {
-                console.warn("尚未登入，略過 Supabase 同步。");
-                return;
-            }
-
-            const questionText = String(question?.["題目"] || "")
-                .replace(/<[^>]*>/g, "")
-                .trim();
-            if (!questionText) return;
-
-            const subject = question?.__subject || "其他科目";
-            const questionId = subject + "||" + questionText;
-
-            const { data: oldRow, error: readError } =
-                await supabaseClient
-                    .from("question_stats")
-                    .select("attempts, correct, wrong, correct_streak")
-                    .eq("user_id", user.id)
-                    .eq("question_id", questionId)
-                    .maybeSingle();
-
-            if (readError) {
-                console.error("讀取 Supabase 紀錄失敗：", readError);
-                return;
-            }
-
-            const attempts = Number(oldRow?.attempts || 0) + 1;
-            const correct = Number(oldRow?.correct || 0) + (isCorrect ? 1 : 0);
-            const wrong = Number(oldRow?.wrong || 0) + (isCorrect ? 0 : 1);
-            const correctStreak = isCorrect
-                ? Number(oldRow?.correct_streak || 0) + 1
-                : 0;
-
-            const { error: saveError } =
-                await supabaseClient
-                    .from("question_stats")
-                    .upsert({
-                        user_id: user.id,
-                        question_id: questionId,
-                        subject: subject,
-                        question_type: questionType || "",
-                        attempts: attempts,
-                        correct: correct,
-                        wrong: wrong,
-                        correct_streak: correctStreak,
-                        last_answered_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }, {
-                        onConflict: "user_id,question_id"
-                    });
-
-            if (saveError) {
-                console.error("寫入 Supabase 失敗：", saveError);
-                return;
-            }
-
-            console.log("✅ 已同步 Supabase：", questionText);
-        } catch (error) {
-            console.error("Supabase 同步發生錯誤：", error);
-        }
-    }
-
     function recordQuestionResult(question, correct, questionType) {
         if (!question || !question["題目"]) return;
         const subject = question.__subject || "其他科目";
@@ -5346,9 +5885,6 @@ body.v40-night #selectedSubjectTestPanel .subject-group-academic {
             stats[key].correctStreak = 0;
         }
         saveErrorStats(stats);
-
-        // 雲端同步（不影響原本 localStorage）
-        void saveQuestionToSupabase(question, correct, questionType);
     }
     function findQuestionData(record) {
         try {
@@ -5385,9 +5921,70 @@ body.v40-night #selectedSubjectTestPanel .subject-group-academic {
             updateHomepageErrorRate();
         }
     }
+    // 使用者答題排行：從 Supabase quiz_stats 取得跨使用者資料
+    async function loadUserAnswerRanking(target) {
+        if (!target) return;
+        target.textContent = "載入中...";
+        try {
+            const { data: rows, error } = await supabaseClient.from("quiz_stats").select("*");
+            if (error) throw error;
+            if (!Array.isArray(rows) || rows.length === 0) {
+                target.innerHTML = '<div style="color:#888">目前沒有使用者答題紀錄</div>';
+                return;
+            }
+            const num = (obj, keys) => {
+                for (const k of keys) { const v=Number(obj?.[k]); if (Number.isFinite(v)) return v; }
+                return 0;
+            };
+            const text = (obj, keys, fallback="未命名使用者") => {
+                for (const k of keys) { const v=obj?.[k]; if (v!==undefined && v!==null && String(v).trim()) return String(v).trim(); }
+                return fallback;
+            };
+            const users=new Map();
+            for (const row of rows) {
+                const userId=text(row,["user_id","userid","uid","userId"],"");
+                const key=userId || text(row,["username","account","name"],"unknown");
+                const name=text(row,["name","display_name","displayName","username","account"]);
+                const username=text(row,["username","account","user_name"],"");
+                const answered=num(row,["total_questions","total_answered","answered","attempts","question_count","questions","total"]);
+                const correct=num(row,["correct","correct_count","total_correct","right"]);
+                const wrong=num(row,["wrong","wrong_count","total_wrong","incorrect"]);
+                if(!users.has(key)) users.set(key,{name,username,answered:0,correct:0,wrong:0});
+                const u=users.get(key); u.answered+=answered; u.correct+=correct; u.wrong+=wrong;
+            }
+            const ranking=Array.from(users.values()).filter(u=>u.answered>0).map(u=>({...u,accuracy:u.correct/u.answered*100})).sort((a,b)=>b.accuracy-a.accuracy||b.answered-a.answered||b.correct-a.correct);
+            target.innerHTML=ranking.length ? `
+              <div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;background:#f5f2ff;color:#51458c;font-size:13px;font-weight:700">
+                排名方式：正確率由高至低；正確率相同時，以答題數較多者優先
+              </div>
+              ${ranking.map((u,i)=>{
+                const label=u.username ? `${u.name}（${u.username}）` : u.name;
+                const medal = i===0 ? "🥇" : i===1 ? "🥈" : i===2 ? "🥉" : `${i+1}.`;
+                return `<div class="user-rank-card">
+                  <div class="user-rank-main">
+                    <span class="user-rank-no">${medal}</span>
+                    <span class="user-rank-name">${label}</span>
+                    <span class="user-rank-accuracy">${u.accuracy.toFixed(1)}%</span>
+                  </div>
+                  <div class="user-rank-detail">
+                    <span>答題 <b>${u.answered}</b> 題</span>
+                    <span>答對 <b>${u.correct}</b></span>
+                    <span>答錯 <b>${u.wrong}</b></span>
+                  </div>
+                </div>`;
+              }).join("")}
+            ` : '<div style="color:#888">目前沒有足夠的使用者答題資料</div>';
+        } catch(error) {
+            console.error("使用者答題排行載入失敗：",error);
+            target.innerHTML='<div style="color:#b42318">目前無法讀取使用者答題排行，請確認 Supabase 的 quiz_stats 表與讀取權限。</div>';
+        }
+    }
+
     function updateHomepageErrorRate() {
-        const old = document.getElementById("homepage-error-rate");
-        if (old) old.remove();
+        ["homepage-error-rate", "stats-detail-subjects", "stats-detail-risk", "stats-ranking-panel"].forEach(id => {
+            const old = document.getElementById(id);
+            if (old) old.remove();
+        });
         const stats = getErrorStats();
         const records = Object.values(stats);
         let total = 0, wrong = 0;
@@ -5422,7 +6019,7 @@ body.v40-night #selectedSubjectTestPanel .subject-group-academic {
 
         const panel = document.createElement("div");
         panel.id = "homepage-error-rate";
-        panel.style.cssText = "position:relative;z-index:1;width:calc(100% - 20px);max-width:1100px;box-sizing:border-box;margin:18px auto 8px;padding:14px;border:2px solid #4b7bec;border-radius:14px;background:rgba(255,255,255,.94);box-shadow:none;font-size:16px;line-height:1.55;";
+        panel.style.cssText = "display:none;position:relative;z-index:1;width:calc(100% - 20px);max-width:1100px;box-sizing:border-box;margin:18px auto 8px;padding:14px;border:2px solid #4b7bec;border-radius:14px;background:rgba(255,255,255,.94);box-shadow:none;font-size:16px;line-height:1.55;";
 
         const accuracyRows = accuracyRanking.map((r,i) => {
             return `<div style="padding:7px 0;border-bottom:1px solid #eee">
@@ -5474,41 +6071,36 @@ body.v40-night #selectedSubjectTestPanel .subject-group-academic {
         const countdownText = daysLeft > 0 ? `距離第四階段考試還有 <b>${daysLeft}</b> 天` : (daysLeft === 0 ? "📣 今天就是第四階段考試！" : "📣 第四階段測驗已經到了，繼續加油！");
 
         panel.innerHTML = `
-          
-<div class="v40-exam-simple" style="margin:8px 0;padding:10px;border-radius:8px;background:#fff4d6;text-align:center;font-size:19px;font-weight:bold">
-  📅 第四階段測驗：2026/11/07　｜　<span id="v40-exam-days">距離測驗還有：<b>14</b>天</span>
-</div>
-<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-            <b style="font-size:21px">📊 錯誤率統計</b>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <b style="font-size:21px">📊 正確率</b>
             <button onclick="resetErrorStats()" style="padding:5px 9px;border:0;border-radius:7px;background:#ff7675;color:#fff;cursor:pointer">重置</button>
           </div>
-          
-          <div class="stats-summary-better"><div class="stat-card"><div class="stat-label">總作答</div><div class="stat-value">${total}</div></div><div class="stat-card"><div class="stat-label">答對</div><div class="stat-value">${correct}</div></div><div class="stat-card"><div class="stat-label">錯誤</div><div class="stat-value">${wrong}</div></div><div class="stat-card"><div class="stat-label">正確率</div><div class="stat-value">${accuracy.toFixed(1)}%</div></div></div>
-
-          <div style="margin-top:12px">
-            <div style="font-weight:bold;margin-bottom:7px;font-size:18px">🏆 所有科目正確率排行</div>
-            ${accuracyRows}
-          </div>
-
-          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
-            <button type="button" onclick="showStatsDetail('subjects')" style="flex:1;min-width:220px;padding:11px 14px;border:0;border-radius:9px;background:#e8f1ff;color:#2456a6;font-weight:bold;font-size:16px;cursor:pointer">
-              📚 查看各科狀況
-            </button>
-            <button type="button" onclick="showStatsDetail('risk')" style="flex:1;min-width:220px;padding:11px 14px;border:0;border-radius:9px;background:#ffe9e9;color:#b42318;font-weight:bold;font-size:16px;cursor:pointer">
-              ⚠️ 查看錯最多題型 <span style="font-size:12px;font-weight:600;opacity:.8">（計算方式：錯誤率由高至低排列｜前30題）</span>
-            </button>
-          </div>
-
-          <div id="stats-detail-subjects" style="display:none;margin-top:12px;padding:12px;border:1px solid #dbe5f5;border-radius:10px;background:#fbfdff">
-            <div style="font-weight:bold;font-size:18px;margin-bottom:5px">📚 各科正確／錯誤題數</div>
-            ${subjectRows}
-          </div>
-
-          <div id="stats-detail-risk" style="display:none;margin-top:12px;padding:12px;border:1px solid #f2d0d0;border-radius:10px;background:#fffafa">
-            <div style="font-weight:bold;font-size:18px;margin-bottom:5px">⚠️ 查看錯最多題型 Top 30（依錯誤率由高至低排列）</div>
-            ${riskRows}
+          <div class="stats-summary-better">
+            <div class="stat-card"><div class="stat-label">總作答</div><div class="stat-value">${total}</div></div>
+            <div class="stat-card"><div class="stat-label">答對</div><div class="stat-value">${correct}</div></div>
+            <div class="stat-card"><div class="stat-label">錯誤</div><div class="stat-value">${wrong}</div></div>
+            <div class="stat-card"><div class="stat-label">正確率</div><div class="stat-value">${accuracy.toFixed(1)}%</div></div>
           </div>`;
         document.getElementById("container").appendChild(panel);
+
+        const subjectPanel = document.createElement("div");
+        subjectPanel.id = "stats-detail-subjects";
+        subjectPanel.style.cssText = "display:none;position:relative;z-index:1;width:calc(100% - 20px);max-width:1100px;box-sizing:border-box;margin:12px auto;padding:12px;border:2px solid #4b7bec;border-radius:14px;background:rgba(255,255,255,.94);font-size:16px;line-height:1.55;";
+        subjectPanel.innerHTML = `<div style="font-weight:bold;font-size:18px;margin-bottom:8px">📚 各科狀況</div>${subjectRows}`;
+        document.getElementById("container").appendChild(subjectPanel);
+
+        const riskPanel = document.createElement("div");
+        riskPanel.id = "stats-detail-risk";
+        riskPanel.style.cssText = "display:none;position:relative;z-index:1;width:calc(100% - 20px);max-width:1100px;box-sizing:border-box;margin:12px auto;padding:12px;border:2px solid #d63031;border-radius:14px;background:rgba(255,255,255,.94);font-size:16px;line-height:1.55;";
+        riskPanel.innerHTML = `<div style="font-weight:bold;font-size:18px;margin-bottom:8px">⚠️ 錯題 Top 30（依錯誤率由高至低排列）</div>${riskRows}`;
+        document.getElementById("container").appendChild(riskPanel);
+
+        const rankPanel = document.createElement("div");
+        rankPanel.id = "stats-ranking-panel";
+        rankPanel.style.cssText = "display:none;position:relative;z-index:1;width:calc(100% - 20px);max-width:1100px;box-sizing:border-box;margin:12px auto;padding:12px;border:2px solid #f0ad4e;border-radius:14px;background:rgba(255,255,255,.94);font-size:16px;line-height:1.55;";
+        rankPanel.innerHTML = `<div id="stats-ranking" style="font-weight:bold;margin-bottom:7px;font-size:18px">👤 歷史紀錄</div><div id="user-answer-ranking-list" style="color:#777">載入中...</div>`;
+        document.getElementById("container").appendChild(rankPanel);
+        loadUserAnswerRanking(document.getElementById("user-answer-ranking-list"));
     }
 
     // 統計詳細內容按鈕：點擊後展開／收起
@@ -5757,8 +6349,10 @@ const colorMap = {
         document.getElementById("container").insertBefore(button, selectedSubjectButton);
         //製作送出按紐
 
-        // 首頁內嵌錯誤率統計（不使用浮動視窗）
+        // 首頁保持精簡：統計內容改由功能表開啟，不直接佔用首頁空間
         updateHomepageErrorRate();
+        const homepageStats = document.getElementById("homepage-error-rate");
+        if (homepageStats) homepageStats.style.display = "none";
 
     }
 
@@ -6029,7 +6623,7 @@ const colorMap = {
 
         //重考按鈕
         let button = document.createElement("button");
-        button.textContent = "重新測驗(回首頁)"
+        button.textContent = "重新測驗"
         button.addEventListener("click", function () {
             cleanPage();
             showInitialPage();
@@ -6039,7 +6633,7 @@ const colorMap = {
 
         //考完按鈕
         let button2 = document.createElement("button");
-        button2.textContent = "解脫(計算成績)"
+        button2.textContent = "送出"
         button2.id = "resultButton";
         button2.addEventListener("click", function () {
             showResult();
@@ -6232,7 +6826,14 @@ function updateButtonDisplay() {
     }
 }
 
-showInitialPage();
+(async function(){
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (user) {
+    document.body.classList.add("supabase-authenticated");
+    await refreshUserProfile();
+    showInitialPage();
+  }
+})();
 
 // 監聽按鈕點擊與選單切換，點擊「送出」產生題目時自動顯示按鈕
 document.addEventListener("change", updateButtonDisplay);
