@@ -1,4 +1,4 @@
-<!-- 4.0V: 答對最多科目在全錯時顯示「目前沒有答對紀錄」 -->
+﻿<!-- 4.0V: 答對最多科目在全錯時顯示「目前沒有答對紀錄」 -->
 ﻿<!-- 網頁作者:64期士高丁班 -->
 <!DOCTYPE html>
 
@@ -4078,6 +4078,328 @@ body.supabase-authenticated #container{
 .menu-account-settings .account-divider{margin:10px 0;}
 </style>
 
+
+<style id="final-simple-comfort-ui">
+:root{
+  --ui-bg:#100b17;
+  --ui-panel:#18121f;
+  --ui-panel-2:#21182b;
+  --ui-panel-3:#261d32;
+  --ui-border:#4d3d5c;
+  --ui-border-soft:#3b2e49;
+  --ui-accent:#9a7ac4;
+  --ui-accent-2:#c2a9df;
+  --ui-text:#f4eef8;
+  --ui-muted:#b9adc8;
+  --ui-success:#9dd7b5;
+  --ui-danger:#f3a0aa;
+  --ui-shadow:0 8px 24px rgba(0,0,0,.20);
+}
+
+/* 基礎 */
+html,body{background:var(--ui-bg)!important;color:var(--ui-text)!important;}
+body{
+  margin:0!important;
+  min-height:100vh;
+  font-family:"Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif!important;
+  overflow-x:hidden!important;
+}
+button,select,input,textarea{font-family:inherit!important;}
+button{cursor:pointer;touch-action:manipulation;transition:transform .12s ease,background .12s ease,border-color .12s ease,box-shadow .12s ease;}
+button:hover{transform:translateY(-1px);}
+button:active{transform:translateY(0);}
+
+/* 登入介面 */
+#loginPanel{
+  background:linear-gradient(180deg,#1e1628,#17111f)!important;
+  color:var(--ui-text)!important;
+  border:1px solid var(--ui-border)!important;
+  border-radius:16px!important;
+  box-shadow:var(--ui-shadow)!important;
+  box-sizing:border-box!important;
+  max-width:420px!important;
+  width:calc(100% - 24px)!important;
+  padding:24px!important;
+}
+#loginPanel input{
+  width:100%!important;
+  box-sizing:border-box!important;
+  background:#21192b!important;
+  color:var(--ui-text)!important;
+  border:1px solid #584765!important;
+  border-radius:10px!important;
+  padding:12px 13px!important;
+  margin:6px 0!important;
+  min-height:46px!important;
+}
+#loginPanel input:focus{
+  outline:none!important;
+  border-color:var(--ui-accent)!important;
+  box-shadow:0 0 0 3px rgba(154,122,196,.16)!important;
+}
+#loginPanel button{
+  width:100%!important;
+  min-height:46px!important;
+  margin:7px 0 0!important;
+  border:1px solid #5c4a70!important;
+  border-radius:10px!important;
+  background:#5a4676!important;
+  color:#fff!important;
+  font-weight:800!important;
+}
+
+/* 頂端 */
+.marquee-container{
+  background:#18121f!important;
+  color:#eee6f5!important;
+  border-bottom:1px solid var(--ui-border-soft)!important;
+}
+.marquee-text{padding:9px 12px!important;}
+#header{color:var(--ui-text)!important;}
+#header hr{border-color:#3a2d47!important;}
+
+#v40-home-exam-countdown{
+  background:linear-gradient(180deg,#2a2035,#21182b)!important;
+  color:var(--ui-accent-2)!important;
+  border:1px solid var(--ui-border)!important;
+  border-radius:12px!important;
+  box-shadow:0 6px 16px rgba(0,0,0,.14)!important;
+  max-width:1100px!important;
+  margin:10px auto!important;
+  padding:10px 14px!important;
+  box-sizing:border-box!important;
+}
+
+/* 主內容：保留原本所有元素與流程，只改善空間 */
+#container{
+  max-width:1100px!important;
+  width:min(1100px,calc(100% - 24px))!important;
+  margin:12px auto 30px!important;
+  color:var(--ui-text)!important;
+  box-sizing:border-box!important;
+}
+
+/* 首頁答題統計 */
+#homepageAnswerSummary{
+  gap:10px!important;
+  margin-bottom:12px!important;
+}
+#homepageAnswerSummary .answer-stat,
+#homepage-error-rate .stat-card{
+  background:#1b1522!important;
+  color:var(--ui-text)!important;
+  border:1px solid var(--ui-border)!important;
+  border-radius:12px!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.12)!important;
+  min-height:74px!important;
+  box-sizing:border-box!important;
+}
+#homepageAnswerSummary .answer-stat-value{color:#f2ebf6!important;}
+#homepageAnswerSummary .answer-stat-label{color:var(--ui-muted)!important;}
+#homepageAnswerSummary .correct .answer-stat-value,
+#homepageAnswerSummary .correct .answer-stat-label{color:var(--ui-success)!important;}
+#homepageAnswerSummary .wrong .answer-stat-value,
+#homepageAnswerSummary .wrong .answer-stat-label{color:var(--ui-danger)!important;}
+#homepageAnswerSummary .accuracy .answer-stat-value,
+#homepageAnswerSummary .accuracy .answer-stat-label{color:var(--ui-accent-2)!important;}
+
+/* 首頁選項區塊 */
+.home-subject-row,
+#fullQuestionRow,#shuffleRow,#wrongOnlyRow{
+  background:#1e1727!important;
+  color:var(--ui-text)!important;
+  border:1px solid var(--ui-border-soft)!important;
+  border-radius:11px!important;
+  box-sizing:border-box!important;
+}
+.home-subject-row{padding:12px 13px!important;}
+#fullQuestionRow,#shuffleRow,#wrongOnlyRow{padding:10px 12px!important;}
+.home-subject-row label,#fullQuestionRow label,#shuffleRow label,#wrongOnlyRow label{
+  color:var(--ui-text)!important;
+  font-weight:800!important;
+}
+#subject{
+  background:#17121f!important;
+  color:#f4eef8!important;
+  border:1px solid #5a496b!important;
+  border-radius:10px!important;
+  min-height:46px!important;
+}
+#subject:focus{
+  outline:none!important;
+  border-color:var(--ui-accent)!important;
+  box-shadow:0 0 0 3px rgba(154,122,196,.14)!important;
+}
+#fullQuestionRow input,#shuffleRow input,#wrongOnlyRow input{
+  accent-color:#9a7ac4!important;
+}
+
+/* 首頁按鈕 */
+#selectedSubjectTestButton,#container > button:not(#resultHomeButton):not(#resultButton){
+  background:#5a4676!important;
+  color:#fff!important;
+  border:1px solid #6b5788!important;
+  border-radius:10px!important;
+  min-height:46px!important;
+  font-weight:800!important;
+}
+#selectedSubjectTestButton:hover,
+#container > button:not(#resultHomeButton):not(#resultButton):hover{
+  background:#6b548b!important;
+}
+#selectedSubjectTestPanel{
+  background:#191320!important;
+  color:var(--ui-text)!important;
+  border:1px solid var(--ui-border)!important;
+  border-radius:12px!important;
+  box-shadow:var(--ui-shadow)!important;
+}
+
+/* 測驗表格／題目 */
+#container table{
+  width:100%!important;
+  border-collapse:separate!important;
+  border-spacing:0!important;
+  background:#17121f!important;
+  color:var(--ui-text)!important;
+  border:1px solid var(--ui-border)!important;
+  border-radius:12px!important;
+  overflow:hidden!important;
+}
+#container th,#container td{
+  border-color:#40334d!important;
+  color:var(--ui-text)!important;
+  vertical-align:top!important;
+}
+#container th{background:#241b30!important;}
+#container tr:nth-child(even){background:#1a1522!important;}
+#container tr:nth-child(odd){background:#1d1726!important;}
+#container input[type="radio"],#container input[type="checkbox"]{
+  accent-color:#9a7ac4!important;
+}
+#container p,#container h1,#container h2,#container h3,#container h4{
+  color:var(--ui-text)!important;
+}
+#container a{color:#c5ace1!important;}
+
+/* 成績頁 */
+#resultHomeButton,#resultButton{
+  min-height:48px!important;
+  border-radius:11px!important;
+  font-weight:900!important;
+  margin:8px 5px!important;
+}
+#resultHomeButton{
+  background:#2a2035!important;color:#e8ddf1!important;border:1px solid #5a496b!important;
+}
+#resultButton{
+  background:#5d497c!important;color:#fff!important;border:1px solid #735d91!important;
+}
+
+/* 功能表 */
+.site-menu-panel{
+  background:#17121f!important;
+  color:var(--ui-text)!important;
+  border:1px solid #5a496b!important;
+  border-radius:13px!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.32)!important;
+  max-height:calc(100vh - 78px)!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+}
+.site-menu-title,.site-menu-user{color:var(--ui-text)!important;}
+.site-menu-item{
+  width:100%!important;
+  min-height:44px!important;
+  margin:5px 0!important;
+  padding:10px 12px!important;
+  box-sizing:border-box!important;
+  background:#21182b!important;
+  color:#f1ebf6!important;
+  border:1px solid #4b3a5a!important;
+  border-radius:10px!important;
+  text-align:left!important;
+  font-weight:800!important;
+}
+.site-menu-item:hover{background:#2c2138!important;border-color:#6a5383!important;}
+.site-menu-logout{
+  background:#3a222a!important;
+  color:#ffdce2!important;
+  border-color:#68404a!important;
+}
+.site-menu-settings{
+  background:#1c1724!important;
+  color:#d9cee3!important;
+  border:1px solid #4a3a58!important;
+  border-radius:10px!important;
+}
+.site-menu-settings-title{color:#f0e8f4!important;}
+
+/* 帳號設定 */
+.menu-account-settings{
+  padding:12px!important;
+}
+.account-profile-hero{
+  background:linear-gradient(135deg,#251b32,#21182b)!important;
+  border:1px solid var(--ui-border)!important;
+  border-radius:12px!important;
+  padding:12px!important;
+}
+.account-profile-name,.account-section-title,.account-profile-stat-value{color:#f3edf7!important;}
+.account-profile-username,.account-profile-stat-label,.account-profile-eyebrow{color:var(--ui-muted)!important;}
+.account-profile-stat{
+  background:#1b1522!important;
+  border:1px solid #493952!important;
+  border-radius:10px!important;
+}
+.account-setting-row input{
+  width:100%!important;
+  box-sizing:border-box!important;
+  background:#21182b!important;
+  color:#f3edf7!important;
+  border:1px solid #594968!important;
+  border-radius:9px!important;
+  min-height:43px!important;
+}
+.account-save-btn{
+  width:100%!important;
+  min-height:44px!important;
+  background:#5c497a!important;
+  color:#fff!important;
+  border:1px solid #6e5890!important;
+  border-radius:9px!important;
+  font-weight:800!important;
+}
+.account-danger-btn{
+  width:100%!important;
+  min-height:44px!important;
+  background:#42262e!important;
+  color:#ffdce2!important;
+  border:1px solid #6b3e4a!important;
+  border-radius:9px!important;
+  font-weight:800!important;
+}
+
+/* 手機：更容易點，不改功能 */
+@media(max-width:700px){
+  #container{width:calc(100% - 14px)!important;margin-top:8px!important;}
+  #v40-home-exam-countdown{width:calc(100% - 10px)!important;font-size:15px!important;}
+  #homepageAnswerSummary{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  #container button{min-height:46px!important;font-size:15px!important;}
+  #container select{min-height:48px!important;font-size:16px!important;}
+  .site-menu{top:9px!important;right:9px!important;}
+  .site-menu-toggle{width:44px!important;height:44px!important;}
+  .site-menu-panel{
+    width:min(330px,calc(100vw - 18px))!important;
+    max-height:calc(100vh - 62px)!important;
+  }
+  #container table{
+    display:block!important;
+    overflow-x:auto!important;
+  }
+}
+</style>
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -4245,8 +4567,8 @@ body.supabase-authenticated #loginPanel {
   <div id="siteMenuPanel" class="site-menu-panel" hidden>
     <div class="site-menu-title">☰ 功能表</div>
     <div id="siteMenuUser" class="site-menu-user"></div>
-    <button type="button" class="site-menu-item" id="menuSubjectsBtn">📚 各科狀況</button>
-    <button type="button" class="site-menu-item" id="menuRiskBtn">⚠️ 錯題</button>
+    <button type="button" class="site-menu-item" id="menuSubjectsBtn">📚 查看各科狀況</button>
+    <button type="button" class="site-menu-item" id="menuRiskBtn">⚠️ 查看錯最多題型</button>
     <button type="button" class="site-menu-item" id="menuRankBtn">🏆 使用者答題排行</button>
     <button type="button" class="site-menu-item" id="menuSettingsBtn">⚙️ 設定</button>
 <button type="button" class="site-menu-item" id="menuAccountBtn">👤 帳號設定</button>
@@ -6566,13 +6888,13 @@ body.v40-night .account-divider{background:#374151;}
         const subjectPanel = document.createElement("div");
         subjectPanel.id = "stats-detail-subjects";
         subjectPanel.style.cssText = "display:none;position:relative;z-index:1;width:calc(100% - 20px);max-width:1100px;box-sizing:border-box;margin:12px auto;padding:12px;border:2px solid #4b7bec;border-radius:14px;background:rgba(255,255,255,.94);font-size:16px;line-height:1.55;";
-        subjectPanel.innerHTML = `<div style="font-weight:bold;font-size:18px;margin-bottom:8px">📚 各科狀況</div>${subjectRows}`;
+        subjectPanel.innerHTML = `<div style="font-weight:bold;font-size:18px;margin-bottom:8px">📚 查看各科狀況</div>${subjectRows}`;
         document.getElementById("container").appendChild(subjectPanel);
 
         const riskPanel = document.createElement("div");
         riskPanel.id = "stats-detail-risk";
         riskPanel.style.cssText = "display:none;position:relative;z-index:1;width:calc(100% - 20px);max-width:1100px;box-sizing:border-box;margin:12px auto;padding:12px;border:2px solid #d63031;border-radius:14px;background:rgba(255,255,255,.94);font-size:16px;line-height:1.55;";
-        riskPanel.innerHTML = `<div style="font-weight:bold;font-size:18px;margin-bottom:8px">⚠️ 錯題 Top 30（依錯誤率由高至低排列）</div>${riskRows}`;
+        riskPanel.innerHTML = `<div style="font-weight:bold;font-size:18px;margin-bottom:8px">⚠️ 查看錯最多題型 Top 30（依錯誤率由高至低排列）</div>${riskRows}`;
         document.getElementById("container").appendChild(riskPanel);
 
         const rankPanel = document.createElement("div");
