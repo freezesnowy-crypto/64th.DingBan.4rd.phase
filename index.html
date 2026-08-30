@@ -4475,6 +4475,13 @@ button:active{transform:translateY(0);}
 }
 </style>
 
+<style id="avatar-image-reliable-css">
+.account-avatar{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.account-avatar-letter{display:block;font-weight:900;}
+.account-avatar-image{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%;}
+.account-avatar-edit{z-index:3;}
+</style>
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -4659,7 +4666,10 @@ body.supabase-authenticated #loginPanel {
     <div id="menuAccountPanel" class="site-menu-settings menu-account-settings" hidden>
       <div class="account-profile-hero">
         <div class="account-avatar-wrap">
-          <div id="accountAvatar" class="account-avatar">U</div>
+          <div id="accountAvatar" class="account-avatar">
+            <span class="account-avatar-letter">U</span>
+            <img id="accountAvatarImage" class="account-avatar-image" alt="使用者頭像" hidden>
+          </div>
           <label for="accountAvatarInput" class="account-avatar-edit" title="更換頭像">✎</label>
           <input id="accountAvatarInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
         </div>
@@ -6004,6 +6014,33 @@ body.v40-night .account-divider{background:#374151;}
       }catch(e){ console.warn("更新帳號統計失敗",e); }
     }
 
+    function renderAccountAvatar(avatarUrl, displayName){
+      const box=document.getElementById("accountAvatar");
+      const img=document.getElementById("accountAvatarImage");
+      const letter=box?.querySelector(".account-avatar-letter");
+      const cleanUrl=String(avatarUrl||"").trim();
+
+      if(img && cleanUrl){
+        // unique query avoids stale image cache after re-upload
+        const finalUrl=cleanUrl+(cleanUrl.includes("?")?"&":"?")+"v="+Date.now();
+        img.onload=()=>{
+          img.hidden=false;
+          if(letter) letter.hidden=true;
+        };
+        img.onerror=()=>{
+          img.hidden=true;
+          if(letter){ letter.hidden=false; letter.textContent=(String(displayName||"U").trim().charAt(0)||"U").toUpperCase(); }
+        };
+        img.src=finalUrl;
+      }else if(img){
+        img.hidden=true;
+        img.removeAttribute("src");
+        if(letter){ letter.hidden=false; letter.textContent=(String(displayName||"U").trim().charAt(0)||"U").toUpperCase(); }
+      }else if(box){
+        box.textContent=(String(displayName||"U").trim().charAt(0)||"U").toUpperCase();
+      }
+    }
+
     async function loadAccountCard(){
       const nameInput=document.getElementById("accountNameInput");
       const usernameInput=document.getElementById("accountUsernameInput");
@@ -6032,18 +6069,8 @@ body.v40-night .account-divider{background:#374151;}
         const avatar=document.getElementById("accountAvatar");
         if(nameEl) nameEl.textContent=displayName;
         if(userEl) userEl.textContent=username ? "@"+username : "";
-        if(avatar){
-          const avatarUrl=profile?.avatar_url || currentUser?.user_metadata?.avatar_url || localStorage.getItem("currentUserAvatarUrl") || "";
-          if(avatarUrl){
-            avatar.textContent="";
-            avatar.style.backgroundImage=`url("${avatarUrl}")`;
-            avatar.style.backgroundSize="cover";
-            avatar.style.backgroundPosition="center";
-          }else{
-            avatar.style.backgroundImage="";
-            avatar.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
-          }
-        }
+        const avatarUrl=profile?.avatar_url || currentUser?.user_metadata?.avatar_url || localStorage.getItem("currentUserAvatarUrl") || "";
+        renderAccountAvatar(avatarUrl, displayName);
 
         refreshAccountCard();
         if(status) status.textContent="";
@@ -6178,13 +6205,8 @@ body.v40-night .account-divider{background:#374151;}
 
         localStorage.setItem("currentUserAvatarUrl",avatarUrl);
 
-        const avatar=document.getElementById("accountAvatar");
-        if(avatar){
-          avatar.textContent="";
-          avatar.style.backgroundImage=`url("${avatarUrl}")`;
-          avatar.style.backgroundSize="cover";
-          avatar.style.backgroundPosition="center";
-        }
+        localStorage.setItem("currentUserAvatarUrl",avatarUrl);
+        renderAccountAvatar(avatarUrl, user.user_metadata?.name || user.user_metadata?.username || "使用者");
 
         setAccountStatus("頭像已更新");
         // 保持目前畫面，不再立即重刷整個帳號卡片，避免剛上傳的圖片被舊 profile 資料覆蓋
