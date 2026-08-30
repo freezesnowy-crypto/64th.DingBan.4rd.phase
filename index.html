@@ -4523,6 +4523,14 @@ button:active{transform:translateY(0);}
 }
 </style>
 
+
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#100b17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="題庫測驗">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -6426,6 +6434,18 @@ renderAccountAvatar(avatarUrl, user.user_metadata?.name || user.user_metadata?.u
     document.addEventListener("DOMContentLoaded",fix,{once:true});
   }else fix();
   window.addEventListener("resize",fix,{passive:true});
+})();
+</script>
+
+
+<script id="pwa-service-worker-register">
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./service-worker.js').catch(function(err){
+      console.warn('PWA Service Worker 註冊失敗：',err);
+    });
+  });
 })();
 </script>
 
