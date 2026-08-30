@@ -4483,23 +4483,13 @@ button:active{transform:translateY(0);}
 </style>
 
 
-<style id="avatar-full-cover-fix">
-.account-avatar-wrap{
-  position:relative!important;
-  width:64px!important;
-  height:64px!important;
-  min-width:64px!important;
-  min-height:64px!important;
-  flex:0 0 64px!important;
-  border-radius:50%!important;
-}
+<style id="avatar-final-clean-css">
 .account-avatar{
-  width:64px!important;
-  height:64px!important;
-  min-width:64px!important;
-  min-height:64px!important;
-  padding:0!important;
-  margin:0!important;
+  position:relative!important;
+  width:64px!important;height:64px!important;
+  min-width:64px!important;min-height:64px!important;
+  flex:0 0 64px!important;
+  margin:0!important;padding:0!important;
   border-radius:50%!important;
   overflow:hidden!important;
   display:flex!important;
@@ -4507,28 +4497,25 @@ button:active{transform:translateY(0);}
   justify-content:center!important;
   box-sizing:border-box!important;
 }
-.account-avatar-image{
-  width:100%!important;
-  height:100%!important;
-  max-width:none!important;
-  max-height:none!important;
-  display:block!important;
-  object-fit:cover!important;
-  object-position:center!important;
-  border:0!important;
-  border-radius:50%!important;
+.account-avatar-image,
+.account-avatar-image[hidden]{
+  width:100%!important;height:100%!important;
+  max-width:none!important;max-height:none!important;
+  margin:0!important;padding:0!important;
+  border:0!important;border-radius:50%!important;
+  object-fit:cover!important;object-position:center!important;
 }
+.account-avatar-image[hidden]{display:none!important;}
 .account-avatar-letter{
-  width:100%!important;
-  height:100%!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  margin:0!important;
-  border-radius:50%!important;
+  width:100%!important;height:100%!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  margin:0!important;padding:0!important;border-radius:50%!important;
+  box-sizing:border-box!important;
+}
+.account-avatar-edit{
+  z-index:5!important;
 }
 @media(max-width:700px){
-  .account-avatar-wrap,
   .account-avatar{
     width:60px!important;height:60px!important;
     min-width:60px!important;min-height:60px!important;flex-basis:60px!important;
@@ -6073,26 +6060,39 @@ body.v40-night .account-divider{background:#374151;}
       const img=document.getElementById("accountAvatarImage");
       const letter=box?.querySelector(".account-avatar-letter");
       const cleanUrl=String(avatarUrl||"").trim();
+      const fallback=(String(displayName||"U").trim().charAt(0)||"U").toUpperCase();
 
-      if(img && cleanUrl){
-        // unique query avoids stale image cache after re-upload
-        const finalUrl=cleanUrl+(cleanUrl.includes("?")?"&":"?")+"v="+Date.now();
-        img.onload=()=>{
-          img.hidden=false;
-          if(letter) letter.hidden=true;
-        };
-        img.onerror=()=>{
-          img.hidden=true;
-          if(letter){ letter.hidden=false; letter.textContent=(String(displayName||"U").trim().charAt(0)||"U").toUpperCase(); }
-        };
-        img.src=finalUrl;
-      }else if(img){
-        img.hidden=true;
-        img.removeAttribute("src");
-        if(letter){ letter.hidden=false; letter.textContent=(String(displayName||"U").trim().charAt(0)||"U").toUpperCase(); }
-      }else if(box){
-        box.textContent=(String(displayName||"U").trim().charAt(0)||"U").toUpperCase();
+      if(!box) return;
+
+      if(!img){
+        box.textContent=fallback;
+        return;
       }
+
+      // 先顯示預設字母，圖片成功載入後再切換，避免電腦版出現破圖圖示。
+      img.hidden=true;
+      img.removeAttribute("src");
+      if(letter){
+        letter.hidden=false;
+        letter.textContent=fallback;
+      }
+
+      if(!cleanUrl) return;
+
+      const finalUrl=cleanUrl+(cleanUrl.includes("?")?"&":"?")+"v="+Date.now();
+
+      img.onload=function(){
+        img.hidden=false;
+        if(letter) letter.hidden=true;
+      };
+      img.onerror=function(){
+        img.hidden=true;
+        if(letter){
+          letter.hidden=false;
+          letter.textContent=fallback;
+        }
+      };
+      img.src=finalUrl;
     }
 
     async function loadAccountCard(){
@@ -6123,7 +6123,7 @@ body.v40-night .account-divider{background:#374151;}
         const avatar=document.getElementById("accountAvatar");
         if(nameEl) nameEl.textContent=displayName;
         if(userEl) userEl.textContent=username ? "@"+username : "";
-        const avatarUrl=profile?.avatar_url || currentUser?.user_metadata?.avatar_url || localStorage.getItem("currentUserAvatarUrl") || "";
+        const avatarUrl=profile?.avatar_url || currentUser?.user_metadata?.avatar_url || localStorage.getItem("currentUserAvatarUrl_"+currentUser.id) || "";
         renderAccountAvatar(avatarUrl, displayName);
 
         refreshAccountCard();
@@ -6256,11 +6256,8 @@ body.v40-night .account-divider{background:#374151;}
           .update({avatar_url:avatarUrl})
           .eq("id",user.id);
         if(updateError) console.warn("profiles.avatar_url 尚未可用，已改用 Auth metadata 保存：",updateError.message);
-
-        localStorage.setItem("currentUserAvatarUrl",avatarUrl);
-
-        localStorage.setItem("currentUserAvatarUrl",avatarUrl);
-        renderAccountAvatar(avatarUrl, user.user_metadata?.name || user.user_metadata?.username || "使用者");
+        localStorage.setItem("currentUserAvatarUrl_"+user.id,avatarUrl);
+renderAccountAvatar(avatarUrl, user.user_metadata?.name || user.user_metadata?.username || "使用者");
 
         setAccountStatus("頭像已更新");
         // 保持目前畫面，不再立即重刷整個帳號卡片，避免剛上傳的圖片被舊 profile 資料覆蓋
