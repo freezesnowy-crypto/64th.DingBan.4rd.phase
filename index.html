@@ -184,21 +184,25 @@ async function refreshUserProfile() {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (error) {
-    console.warn("讀取 profiles 失敗：", error);
-    return null;
-  }
+  if (error) console.warn("讀取 profiles 失敗，改用 Auth metadata：", error.message);
+
+  const mergedProfile = {
+    ...(profile || {}),
+    name: profile?.name || user.user_metadata?.name || "",
+    username: profile?.username || user.user_metadata?.username || "",
+    avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || ""
+  };
 
   const panel = document.getElementById("loginPanel");
   if (panel && profile) {
     panel.innerHTML = `
       <div style="font-size:20px;font-weight:bold;text-align:center">✅ 已登入</div>
-      <div style="text-align:center;margin-top:8px">${profile.name || ""}</div>
-      <div style="text-align:center;margin-top:4px;font-size:14px;color:#666">帳號：${profile.username || ""}</div>
+      <div style="text-align:center;margin-top:8px">${mergedProfile.name || ""}</div>
+      <div style="text-align:center;margin-top:4px;font-size:14px;color:#666">帳號：${mergedProfile.username || ""}</div>
       <button type="button" onclick="logoutUser()" style="display:block;margin:12px auto 0;padding:9px 18px;cursor:pointer">登出</button>
     `;
   }
-  return profile;
+  return mergedProfile;
 }
 
 async function logoutUser() {
@@ -6013,10 +6017,13 @@ body.v40-night .account-divider{background:#374151;}
         const {data:{user:currentUser}}=await supabaseClient.auth.getUser();
         const {data:profile,error}=await supabaseClient
           .from("profiles").select("id,name,username,avatar_url").eq("id",user.id).maybeSingle();
-        if(error) throw error;
 
-        const displayName=profile?.name || profile?.username || "使用者";
-        const username=profile?.username || "";
+        if(error) console.warn("讀取 profiles 失敗，改用 Auth 資料：", error.message);
+
+        const authName = user.user_metadata?.name || "";
+        const authUsername = user.user_metadata?.username || "";
+        const displayName=profile?.name || authName || profile?.username || authUsername || "使用者";
+        const username=profile?.username || authUsername || "";
         nameInput.value=profile?.name || "";
         usernameInput.value=username;
 
