@@ -191,6 +191,8 @@ async function logoutUser() {
     setLoginStatus("登出失敗：" + error.message, true);
     return;
   }
+  questionStatsCurrentUserId = null;
+  localStorage.removeItem("questionStatsCurrentUserId");
   document.body.classList.remove("supabase-authenticated");
   location.reload();
 }
@@ -198,10 +200,20 @@ async function logoutUser() {
 async function checkLogin() {
   const { data: { user } } = await supabaseClient.auth.getUser();
   if (user) {
+    questionStatsCurrentUserId = user.id;
+    localStorage.setItem("questionStatsCurrentUserId", user.id);
     document.body.classList.add("supabase-authenticated");
     console.log("已登入：", user.email);
+
+    // 重要：登入後只載入這個 user.id 的雲端答題紀錄
+    await loadCurrentUserQuestionStatsFromSupabase();
     await refreshUserProfile();
+
+    // 若首頁統計已存在，登入後立即刷新成目前帳號的資料
+    if (typeof updateHomepageErrorRate === "function") updateHomepageErrorRate();
   } else {
+    questionStatsCurrentUserId = null;
+    localStorage.removeItem("questionStatsCurrentUserId");
     document.body.classList.remove("supabase-authenticated");
     console.log("目前尚未登入");
   }
@@ -5848,23 +5860,87 @@ body.v40-night .account-divider{background:#374151;}
     }
 
     // 首頁錯誤統計：各科目、總體、以及高錯誤機率題目
+    // 每位登入使用者使用自己的 localStorage，避免同一瀏覽器不同帳號共用紀錄
+    let questionStatsCurrentUserId = null;
+
+    function getQuestionStatsStorageKey() {
+        const userId = questionStatsCurrentUserId || localStorage.getItem("questionStatsCurrentUserId");
+        return userId ? "questionErrorStats_" + userId : "questionErrorStats_guest";
+    }
+
     function getErrorStats() {
-        try { return JSON.parse(localStorage.getItem("questionErrorStats") || "{}"); }
+        try { return JSON.parse(localStorage.getItem(getQuestionStatsStorageKey()) || "{}"); }
         catch(e) { return {}; }
     }
+
     function saveErrorStats(stats) {
-        localStorage.setItem("questionErrorStats", JSON.stringify(stats));
+        localStorage.setItem(getQuestionStatsStorageKey(), JSON.stringify(stats || {}));
     }
+
+    function clearCurrentUserErrorStats() {
+        localStorage.removeItem(getQuestionStatsStorageKey());
+    }
+
+    // 登入後從 Supabase 載入「目前 user_id」的題目統計，不會讀到其他帳號
+    async function loadCurrentUserQuestionStatsFromSupabase() {
+        try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) {
+                questionStatsCurrentUserId = null;
+                localStorage.removeItem("questionStatsCurrentUserId");
+                return {};
+            }
+
+            questionStatsCurrentUserId = user.id;
+            localStorage.setItem("questionStatsCurrentUserId", user.id);
+
+            const { data: rows, error } = await supabaseClient
+                .from("question_stats")
+                .select("question_id,subject,question_type,attempts,correct,wrong,correct_streak,last_answered_at")
+                .eq("user_id", user.id);
+
+            if (error) throw error;
+
+            const stats = {};
+            (rows || []).forEach(row => {
+                const questionId = String(row.question_id || "");
+                const separator = questionId.indexOf("||");
+                const subject = row.subject || (separator >= 0 ? questionId.slice(0, separator) : "其他科目");
+                const question = separator >= 0 ? questionId.slice(separator + 2) : questionId;
+                const key = questionId || (subject + "||" + question);
+
+                stats[key] = {
+                    subject: subject,
+                    question: question,
+                    questionType: row.question_type || "",
+                    options: [],
+                    answer: "",
+                    attempts: Number(row.attempts) || 0,
+                    wrong: Number(row.wrong) || 0,
+                    recentResults: [],
+                    correctStreak: Number(row.correct_streak) || 0,
+                    lastAnsweredAt: row.last_answered_at || null
+                };
+            });
+
+            saveErrorStats(stats);
+            return stats;
+        } catch (e) {
+            console.warn("載入目前使用者 Supabase 題目紀錄失敗：", e);
+            return getErrorStats();
+        }
+    }
+
     async function saveQuestionToSupabase(question, correct, questionType) {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) return;
-            if (!question || !question["題目"]) return;
+            if (!user || !question || !question["題目"]) return;
+
+            questionStatsCurrentUserId = user.id;
+            localStorage.setItem("questionStatsCurrentUserId", user.id);
 
             const subject = question.__subject || "其他科目";
-            const cleanQuestion = String(question["題目"] || "")
-                .replace(/<[^>]*>/g, "")
-                .trim();
+            const cleanQuestion = String(question["題目"] || "").replace(/<[^>]*>/g, "").trim();
             const questionId = subject + "||" + cleanQuestion;
 
             const { data: oldRow, error: readError } = await supabaseClient
@@ -5874,52 +5950,47 @@ body.v40-night .account-divider{background:#374151;}
                 .eq("question_id", questionId)
                 .maybeSingle();
 
-            if (readError) {
-                console.warn("讀取 Supabase 題目紀錄失敗：", readError);
-                return;
-            }
+            if (readError) throw readError;
 
             const attempts = (Number(oldRow?.attempts) || 0) + 1;
             const correctCount = (Number(oldRow?.correct) || 0) + (correct ? 1 : 0);
             const wrongCount = (Number(oldRow?.wrong) || 0) + (correct ? 0 : 1);
-            const streak = correct
-                ? (Number(oldRow?.correct_streak) || 0) + 1
-                : 0;
+            const streak = correct ? (Number(oldRow?.correct_streak) || 0) + 1 : 0;
 
+            const now = new Date().toISOString();
             const payload = {
                 user_id: user.id,
                 question_id: questionId,
-                subject: subject,
+                subject,
                 question_type: questionType || "",
-                attempts: attempts,
+                attempts,
                 correct: correctCount,
                 wrong: wrongCount,
                 correct_streak: streak,
-                last_answered_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                last_answered_at: now,
+                updated_at: now
             };
 
             const { error: saveError } = await supabaseClient
                 .from("question_stats")
                 .upsert(payload, { onConflict: "user_id,question_id" });
 
-            if (saveError) {
-                console.warn("寫入 Supabase 題目紀錄失敗：", saveError);
-                return;
-            }
-
-            console.log("✅ Supabase 題目紀錄已同步：", questionId);
+            if (saveError) throw saveError;
+            console.log("✅ 已同步目前帳號的 Supabase 題目紀錄：", questionId);
         } catch (e) {
-            console.warn("Supabase 題目同步發生例外：", e);
+            console.warn("Supabase 題目同步失敗，本機仍保留目前帳號紀錄：", e);
         }
     }
+
     function recordQuestionResult(question, correct, questionType) {
         if (!question || !question["題目"]) return;
+
         const subject = question.__subject || "其他科目";
         const key = subject + "||" + question["題目"].replace(/<[^>]*>/g, "").trim();
         const stats = getErrorStats();
+
         if (!stats[key]) stats[key] = {
-            subject: subject,
+            subject,
             question: question["題目"],
             questionType: questionType || "",
             options: Array.isArray(question["選項"]) ? question["選項"].slice() : [],
@@ -5929,22 +6000,30 @@ body.v40-night .account-divider{background:#374151;}
             recentResults: [],
             correctStreak: 0
         };
+
         if (questionType) stats[key].questionType = questionType;
         if (Array.isArray(question["選項"])) stats[key].options = question["選項"].slice();
-        if (question["答案"] !== undefined) stats[key].answer = Array.isArray(question["答案"]) ? question["答案"].slice() : question["答案"];
+        if (question["答案"] !== undefined) {
+            stats[key].answer = Array.isArray(question["答案"]) ? question["答案"].slice() : question["答案"];
+        }
+
         stats[key].attempts++;
         if (!Array.isArray(stats[key].recentResults)) stats[key].recentResults = [];
         stats[key].recentResults.push(correct ? 1 : 0);
         if (stats[key].recentResults.length > 8) stats[key].recentResults = stats[key].recentResults.slice(-8);
+
         if (correct) {
             stats[key].correctStreak = (Number(stats[key].correctStreak) || 0) + 1;
         } else {
             stats[key].wrong++;
             stats[key].correctStreak = 0;
         }
+
+        // 只存到目前登入帳號自己的 localStorage
         saveErrorStats(stats);
-        // 同步雲端：保留 localStorage 作為備援
-        saveQuestionToSupabase(question, correct, questionType);
+
+        // 同步同一個 user_id 的 Supabase question_stats
+        void saveQuestionToSupabase(question, correct, questionType);
     }
     function findQuestionData(record) {
         try {
@@ -5971,14 +6050,33 @@ body.v40-night .account-divider{background:#374151;}
             type: record.questionType || "未記錄"
         };
     }
-    function resetErrorStats() {
-        if (confirm("~確定要重置嗎？~紀錄都會消失痾...QQ")) {
-            localStorage.removeItem("questionErrorStats");
-            localStorage.removeItem("lastErrorRate");
-            localStorage.removeItem("lastIncorrectCount");
-            localStorage.removeItem("lastQuestionCount");
-            localStorage.removeItem("lastTestTime");
+    async function resetErrorStats() {
+        if (!confirm("確定要重置嗎？重置後目前帳號的答題紀錄會消失。")) return;
+
+        try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+
+            // 只清除目前登入帳號自己的本機紀錄
+            if (user) {
+                questionStatsCurrentUserId = user.id;
+                localStorage.setItem("questionStatsCurrentUserId", user.id);
+            }
+            clearCurrentUserErrorStats();
+
+            // 同時只刪除目前 user_id 的 Supabase 紀錄，不影響其他帳號
+            if (user) {
+                const { error } = await supabaseClient
+                    .from("question_stats")
+                    .delete()
+                    .eq("user_id", user.id);
+                if (error) throw error;
+            }
+
             updateHomepageErrorRate();
+            alert("目前帳號的答題紀錄已重置。");
+        } catch (e) {
+            console.warn("重置 Supabase 題目紀錄失敗：", e);
+            alert("雲端紀錄重置失敗，請確認 Supabase RLS 權限。");
         }
     }
     // 使用者答題排行：從 Supabase quiz_stats 取得跨使用者資料
