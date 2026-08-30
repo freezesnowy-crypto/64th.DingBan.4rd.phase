@@ -3799,8 +3799,6 @@ body.v40-night .v40-home-exam-countdown{
   color:#fff2b8 !important;
 }
 </style>
-
-
 <style id="v40-home-exam-countdown-css">
 .v40-home-exam-countdown{
   width:calc(100% - 24px);
@@ -3842,6 +3840,111 @@ body.v40-night #stats-ranking-panel div{
   color:#f3e7b3 !important;
 }
 </style>
+
+<style id="home-button-click-fix">
+#backToHome,#backHomeBtn,.home-back-btn,[class*="back-home"],
+button[onclick*="showHome"],button[onclick*="goHome"],
+#homeNav,.home-nav,.homepage-nav,.nav-home{
+  position:relative !important;
+  z-index:9999 !important;
+  pointer-events:auto !important;
+  top:-18px !important;
+  transform:none !important;
+  margin-bottom:-18px !important;
+}
+</style>
+
+
+<style id="homepage-answer-summary-css">
+#homepageAnswerSummary{
+  width:calc(100% - 32px);
+  max-width:1100px;
+  margin:12px auto 10px;
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+  box-sizing:border-box;
+}
+#homepageAnswerSummary .answer-stat{
+  min-width:0;
+  padding:11px 8px 10px;
+  border:1px solid #5b6170;
+  border-radius:11px;
+  background:rgba(42,42,48,.96);
+  text-align:center;
+  box-sizing:border-box;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+#homepageAnswerSummary .answer-stat-label{
+  font-size:13px;
+  font-weight:800;
+  color:#f3e7b3;
+  margin-bottom:5px;
+}
+#homepageAnswerSummary .answer-stat-value{
+  font-size:25px;
+  font-weight:900;
+  color:#f3e7b3;
+  line-height:1.05;
+}
+#homepageAnswerSummary .answer-stat.correct .answer-stat-label,
+#homepageAnswerSummary .answer-stat.correct .answer-stat-value{color:#8fe0ae;}
+#homepageAnswerSummary .answer-stat.wrong .answer-stat-label,
+#homepageAnswerSummary .answer-stat.wrong .answer-stat-value{color:#ffaaa7;}
+#homepageAnswerSummary .answer-stat.accuracy .answer-stat-label,
+#homepageAnswerSummary .answer-stat.accuracy .answer-stat-value{color:#9fe2bc;}
+
+body.v40-night #homepageAnswerSummary .answer-stat{
+  background:#252c35;
+  border-color:#4d5968;
+}
+body.v40-night #homepageAnswerSummary .answer-stat-label,
+body.v40-night #homepageAnswerSummary .answer-stat-value{color:#f3e7b3;}
+body.v40-night #homepageAnswerSummary .answer-stat.correct .answer-stat-label,
+body.v40-night #homepageAnswerSummary .answer-stat.correct .answer-stat-value{color:#a8e6bf;}
+body.v40-night #homepageAnswerSummary .answer-stat.wrong .answer-stat-label,
+body.v40-night #homepageAnswerSummary .answer-stat.wrong .answer-stat-value{color:#ffb0ad;}
+body.v40-night #homepageAnswerSummary .answer-stat.accuracy .answer-stat-label,
+body.v40-night #homepageAnswerSummary .answer-stat.accuracy .answer-stat-value{color:#b9eccd;}
+
+@media(max-width:700px){
+  #homepageAnswerSummary{
+    width:calc(100% - 20px);
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+    margin-top:9px;
+  }
+  #homepageAnswerSummary .answer-stat{padding:9px 6px;}
+  #homepageAnswerSummary .answer-stat-label{font-size:12px;}
+  #homepageAnswerSummary .answer-stat-value{font-size:21px;}
+}
+</style>
+
+<style id="homepage-usability-css">
+#fullQuestionRow:hover,#shuffleRow:hover,#wrongOnlyRow:hover{filter:brightness(.985);}
+#fullQuestionRow input,#shuffleRow input,#wrongOnlyRow input{width:18px;height:18px;flex:0 0 auto;accent-color:#5b4b8a;}
+#selectedSubjectTestButton{
+  max-width:520px !important;
+  min-height:44px;
+  border-radius:10px !important;
+  font-size:16px !important;
+  font-weight:800 !important;
+}
+#container > button:not(#selectedSubjectTestButton){
+  min-height:42px;
+  border-radius:10px;
+  font-size:16px;
+  font-weight:800;
+}
+@media(max-width:700px){
+  #container > button:not(#selectedSubjectTestButton){
+    width:calc(100% - 20px) !important;
+    margin-left:auto !important;
+    margin-right:auto !important;
+  }
+}
+</style>
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -4009,7 +4112,6 @@ body.supabase-authenticated #loginPanel {
   <div id="siteMenuPanel" class="site-menu-panel" hidden>
     <div class="site-menu-title">☰ 功能表</div>
     <div id="siteMenuUser" class="site-menu-user"></div>
-    <button type="button" class="site-menu-item" id="menuStatsBtn">📊 正確率</button>
     <button type="button" class="site-menu-item" id="menuSubjectsBtn">📚 各科狀況</button>
     <button type="button" class="site-menu-item" id="menuRiskBtn">⚠️ 錯題</button>
     <button type="button" class="site-menu-item" id="menuRankBtn">🏆 使用者答題排行</button>
@@ -5387,7 +5489,7 @@ body.v40-night .account-divider{background:#374151;}
 
     function refreshAccountCard(){
       try{
-        const stats = (typeof getErrorStats === "function") ? getErrorStats() : {};
+        const stats = (typeof getErrorStats === "function") ? (getErrorStats() || {}) : {};
         const rows = Object.values(stats || {});
         let attempts=0, wrong=0, bestStreak=0;
         rows.forEach(r=>{
@@ -6139,6 +6241,25 @@ body.v40-night .account-divider{background:#374151;}
     }
 
     function updateHomepageErrorRate() {
+        const summary = document.getElementById("homepageAnswerSummary");
+        if (typeof renderHomepageAnswerSummary === "function") {
+            const fresh = renderHomepageAnswerSummary();
+            if (summary) {
+                summary.replaceWith(fresh);
+            } else {
+                const container = document.getElementById("container");
+                const subject = document.getElementById("subject");
+                if (container) {
+                    if (subject) {
+                        const subjectRow = subject.closest(".home-subject-row");
+                        if (subjectRow) subjectRow.before(fresh);
+                        else container.prepend(fresh);
+                    } else {
+                        container.prepend(fresh);
+                    }
+                }
+            }
+        }
         ["homepage-error-rate", "stats-detail-subjects", "stats-detail-risk", "stats-ranking-panel"].forEach(id => {
             const old = document.getElementById(id);
             if (old) old.remove();
@@ -6259,7 +6380,22 @@ body.v40-night .account-divider{background:#374151;}
         rankPanel.innerHTML = `<div id="stats-ranking" style="font-weight:bold;margin-bottom:7px;font-size:18px">👤 歷史紀錄</div><div id="user-answer-ranking-list" style="color:#777">載入中...</div>`;
         document.getElementById("container").appendChild(rankPanel);
         loadUserAnswerRanking(document.getElementById("user-answer-ranking-list"));
+    
+    // 同步首頁正確率
+    try {
+        const stats = getErrorStats();
+        let totalAttempts = 0, totalCorrect = 0;
+        Object.values(stats || {}).forEach(item => {
+            totalAttempts += Number(item.attempts) || 0;
+            const wrong = Number(item.wrong) || 0;
+            totalCorrect += Math.max(0, (Number(item.attempts) || 0) - wrong);
+        });
+        const accuracy = totalAttempts ? (totalCorrect / totalAttempts * 100) : 0;
+        
+    } catch (e) {
+        console.warn("首頁正確率更新失敗：", e);
     }
+}
 
     // 統計詳細內容按鈕：點擊後展開／收起
     function showStatsDetail(type) {
@@ -6268,6 +6404,41 @@ body.v40-night .account-divider{background:#374151;}
             const el = document.getElementById("stats-detail-" + id);
             if (el) el.style.display = (id === type && el.style.display === "none") ? "block" : "none";
         });
+    }
+
+    function renderHomepageAnswerSummary() {
+        const stats = (typeof getErrorStats === "function") ? (getErrorStats() || {}) : {};
+        let total = 0, wrong = 0;
+        Object.values(stats).forEach(item => {
+            total += Number(item.attempts) || 0;
+            wrong += Number(item.wrong) || 0;
+        });
+
+        const correct = Math.max(0, total - wrong);
+        const accuracy = total > 0 ? (correct / total * 100) : 0;
+
+        const summary = document.createElement("div");
+        summary.id = "homepageAnswerSummary";
+        summary.setAttribute("aria-label", "答題統計");
+        summary.innerHTML = `
+          <div class="answer-stat">
+            <div class="answer-stat-label">總作答</div>
+            <div class="answer-stat-value">${total}</div>
+          </div>
+          <div class="answer-stat correct">
+            <div class="answer-stat-label">答對</div>
+            <div class="answer-stat-value">${correct}</div>
+          </div>
+          <div class="answer-stat wrong">
+            <div class="answer-stat-label">答錯</div>
+            <div class="answer-stat-value">${wrong}</div>
+          </div>
+          <div class="answer-stat accuracy">
+            <div class="answer-stat-label">正確率</div>
+            <div class="answer-stat-value">${accuracy.toFixed(1)}%</div>
+          </div>
+        `;
+        return summary;
     }
 
     //函數:顯示科目選擇頁面
@@ -6279,9 +6450,10 @@ body.v40-night .account-divider{background:#374151;}
         let label = document.createElement("label");
         label.htmlFor = "subject";
         label.innerHTML = "科目:";
-        label.style.cssText = "display:block;font-weight:700;text-align:center;";
+        label.style.cssText = "display:block;font-weight:800;text-align:left;font-size:16px;";
         let dropDown = document.createElement("select");
         dropDown.id = "subject";
+        dropDown.style.cssText = "width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid #8fa099;border-radius:9px;background:#fff;color:#243447;font-size:15px;font-weight:700;";
 
         // ----- ⭐️ 開始加入的程式碼 ⭐️ -----
 
@@ -6337,10 +6509,13 @@ const colorMap = {
 
         // ----- ⭐️ 結束加入的程式碼 ⭐️ -----
 
+        // 首頁：答題統計放在科目上方
+        document.getElementById("container").appendChild(renderHomepageAnswerSummary());
+
         // 首頁：科目獨立一行
         const subjectRow = document.createElement("div");
         subjectRow.className = "home-subject-row";
-        subjectRow.style.cssText = "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin:10px auto 8px;text-align:center;background:#ccf3e2;border-radius:8px;padding:8px 10px;";
+        subjectRow.style.cssText = "display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:8px;margin:10px auto 8px;text-align:left;background:#ccf3e2;border-radius:12px;padding:11px 12px;max-width:1100px;box-sizing:border-box;";
         subjectRow.appendChild(label);
         subjectRow.appendChild(dropDown);
         document.getElementById("container").appendChild(subjectRow);
@@ -6356,7 +6531,7 @@ const colorMap = {
 	//製作k書選項開關
         const fullQuestionRow = document.createElement("div");
         fullQuestionRow.id = "fullQuestionRow";
-        fullQuestionRow.style.cssText = "display:flex;align-items:center;justify-content:center;gap:6px;width:100%;text-align:center;margin:6px 0;background:#ccf3e2;border-radius:8px;padding:6px 10px;";
+        fullQuestionRow.style.cssText = "display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;text-align:left;margin:7px 0;background:#ccf3e2;border-radius:10px;padding:9px 11px;box-sizing:border-box;font-size:15px;font-weight:700;";
         let label3 = document.createElement("label");
         label3.htmlFor = "fullQuestion";
         label3.innerHTML = "刷題模式(所有題目)";
@@ -6369,7 +6544,7 @@ const colorMap = {
 
         const shuffleRow = document.createElement("div");
         shuffleRow.id = "shuffleRow";
-        shuffleRow.style.cssText = "display:flex;align-items:center;justify-content:center;gap:6px;width:100%;text-align:center;margin:6px 0;background:#ccf3e2;border-radius:8px;padding:6px 10px;";
+        shuffleRow.style.cssText = "display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;text-align:left;margin:7px 0;background:#ccf3e2;border-radius:10px;padding:9px 11px;box-sizing:border-box;font-size:15px;font-weight:700;";
         let label2 = document.createElement("label");
         label2.htmlFor = "needShuffle";
         label2.innerHTML = "測驗模式(選項打亂)";
@@ -6383,7 +6558,7 @@ const colorMap = {
         // 錯題複習模式：只做以前曾經答錯過的題目
         const wrongOnlyRow = document.createElement("div");
         wrongOnlyRow.id = "wrongOnlyRow";
-        wrongOnlyRow.style.cssText = "display:flex;align-items:center;justify-content:center;gap:6px;width:100%;text-align:center;margin:6px 0;background:#ccf3e2;border-radius:8px;padding:6px 10px;";
+        wrongOnlyRow.style.cssText = "display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;text-align:left;margin:7px 0;background:#ccf3e2;border-radius:10px;padding:9px 11px;box-sizing:border-box;font-size:15px;font-weight:700;";
         let label4 = document.createElement("label");
         label4.htmlFor = "wrongOnly";
         label4.innerHTML = "錯題複習模式";
@@ -6507,10 +6682,15 @@ const colorMap = {
         document.getElementById("container").insertBefore(button, selectedSubjectButton);
         //製作送出按紐
 
-        // 首頁保持精簡：統計內容改由功能表開啟，不直接佔用首頁空間
+        // 首頁直接顯示四項個人答題統計；詳細內容仍由功能表開啟
         updateHomepageErrorRate();
         const homepageStats = document.getElementById("homepage-error-rate");
         if (homepageStats) homepageStats.style.display = "none";
+        const homepageSummary = document.getElementById("homepageAnswerSummary");
+        if (homepageSummary) {
+            homepageSummary.style.display = "grid";
+            homepageSummary.removeAttribute("hidden");
+        }
 
     }
 
@@ -6988,8 +7168,12 @@ function updateButtonDisplay() {
   const { data: { user } } = await supabaseClient.auth.getUser();
   if (user) {
     document.body.classList.add("supabase-authenticated");
+    if (typeof loadCurrentUserQuestionStatsFromSupabase === "function") {
+      await loadCurrentUserQuestionStatsFromSupabase();
+    }
     await refreshUserProfile();
     showInitialPage();
+    if (typeof updateHomepageErrorRate === "function") updateHomepageErrorRate();
   }
 })();
 
