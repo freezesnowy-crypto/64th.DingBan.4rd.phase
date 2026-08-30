@@ -81,31 +81,14 @@ async function loginUser() {
   setLoginStatus("登入成功！");
   console.log("目前使用者：", data.user);
 
-  // 登入成功後立即建立首頁；避免 loginPanel 隱藏後 container 還是空白
-  questionStatsCurrentUserId = data.user.id;
-  localStorage.setItem("questionStatsCurrentUserId", data.user.id);
-
   try {
-    if (typeof loadCurrentUserQuestionStatsFromSupabase === "function") {
-      await loadCurrentUserQuestionStatsFromSupabase();
-    }
-  } catch (e) {
-    console.warn("載入個人答題紀錄失敗，仍繼續進入首頁：", e);
-  }
-
-  try {
-    await refreshUserProfile();
-  } catch (e) {
-    console.warn("載入個人資料失敗，仍繼續進入首頁：", e);
-  }
-
-  try {
+    await syncCurrentUserDisplay();
     if (typeof cleanPage === "function") cleanPage();
     if (typeof showInitialPage === "function") showInitialPage();
     if (typeof updateHomepageErrorRate === "function") updateHomepageErrorRate();
   } catch (e) {
-    console.error("登入後首頁建立失敗：", e);
-    setLoginStatus("登入成功，但首頁載入失敗，請重新整理。", true);
+    console.error("登入後同步／首頁建立失敗：", e);
+    setLoginStatus("登入成功，但資料同步失敗，請重新整理。", true);
   }
 }
 
@@ -178,7 +161,14 @@ async function registerUser() {
   if (data.session) {
     document.body.classList.add("supabase-authenticated");
     setLoginStatus("註冊成功，已登入！");
-    await refreshUserProfile();
+    try {
+      await syncCurrentUserDisplay();
+      if (typeof cleanPage === "function") cleanPage();
+      if (typeof showInitialPage === "function") showInitialPage();
+      if (typeof updateHomepageErrorRate === "function") updateHomepageErrorRate();
+    } catch(e) {
+      console.warn("註冊後同步失敗：",e);
+    }
   } else {
     setLoginStatus("帳號已建立；請到 Supabase 關閉 Confirm email，之後即可直接用帳號登入。", false);
   }
@@ -226,17 +216,9 @@ async function logoutUser() {
 async function checkLogin() {
   const { data: { user } } = await supabaseClient.auth.getUser();
   if (user) {
-    questionStatsCurrentUserId = user.id;
-    localStorage.setItem("questionStatsCurrentUserId", user.id);
     document.body.classList.add("supabase-authenticated");
     console.log("已登入：", user.email);
-
-    // 重要：登入後只載入這個 user.id 的雲端答題紀錄
-    await loadCurrentUserQuestionStatsFromSupabase();
-    await refreshUserProfile();
-
-    // 若首頁統計已存在，登入後立即刷新成目前帳號的資料
-    if (typeof updateHomepageErrorRate === "function") updateHomepageErrorRate();
+    await syncCurrentUserDisplay();
   } else {
     questionStatsCurrentUserId = null;
     localStorage.removeItem("questionStatsCurrentUserId");
@@ -5655,6 +5637,38 @@ body.v40-night .account-divider{background:#374151;}
       }
     }
 
+    async function syncCurrentUserDisplay(){
+      try{
+        const {data:{user}}=await supabaseClient.auth.getUser();
+        if(!user) return null;
+
+        // 先指定 user_id，避免殘留上一個帳號的 localStorage key
+        questionStatsCurrentUserId=user.id;
+        localStorage.setItem("questionStatsCurrentUserId",user.id);
+
+        // 以 Supabase 為準重新載入目前帳號的題目統計
+        if(typeof loadCurrentUserQuestionStatsFromSupabase==="function"){
+          await loadCurrentUserQuestionStatsFromSupabase();
+        }
+
+        // 個人資料與統計在同一次同步完成後再更新畫面
+        if(typeof refreshUserProfile==="function"){
+          await refreshUserProfile();
+        }
+        if(typeof loadAccountCard==="function"){
+          await loadAccountCard();
+        }
+        if(typeof updateHomepageErrorRate==="function"){
+          updateHomepageErrorRate();
+        }
+
+        return user;
+      }catch(e){
+        console.warn("同步目前帳號個人資料與正確率失敗：",e);
+        return null;
+      }
+    }
+
     function setAccountStatus(message,isError=false){
       const status=document.getElementById("accountSettingsStatus");
       if(!status) return;
@@ -5676,7 +5690,7 @@ body.v40-night .account-divider{background:#374151;}
       if(settings) settings.hidden=true;
       if(!account) return;
       account.hidden=!account.hidden;
-      if(!account.hidden) loadAccountCard();
+      if(!account.hidden) syncCurrentUserDisplay();
     });
 
     document.getElementById("accountSaveProfileBtn")?.addEventListener("click",async()=>{
@@ -5816,6 +5830,21 @@ body.v40-night .account-divider{background:#374151;}
   }else{
     setTimeout(syncOnce,120);
   }
+})();
+</script>
+
+<script id="current-user-sync-listener">
+(function(){
+  if(!window.supabaseClient || !supabaseClient.auth) return;
+  supabaseClient.auth.onAuthStateChange(function(event,session){
+    if(event==="SIGNED_IN" && session?.user){
+      questionStatsCurrentUserId=session.user.id;
+      localStorage.setItem("questionStatsCurrentUserId",session.user.id);
+      setTimeout(function(){
+        if(typeof syncCurrentUserDisplay==="function") syncCurrentUserDisplay();
+      },0);
+    }
+  });
 })();
 </script>
 
