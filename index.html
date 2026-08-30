@@ -1,4 +1,4 @@
-﻿<!-- 4.0V: 答對最多科目在全錯時顯示「目前沒有答對紀錄」 -->
+<!-- 4.0V: 答對最多科目在全錯時顯示「目前沒有答對紀錄」 -->
 ﻿<!-- 網頁作者:64期士高丁班 -->
 <!DOCTYPE html>
 
@@ -180,7 +180,7 @@ async function refreshUserProfile() {
 
   const { data: profile, error } = await supabaseClient
     .from("profiles")
-    .select("id,name,username,created_at")
+    .select("id,name,username,created_at,avatar_url")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -4400,6 +4400,18 @@ button:active{transform:translateY(0);}
 }
 </style>
 
+<style id="avatar-upload-ui">
+.account-avatar-wrap{position:relative;width:58px;height:58px;flex:0 0 58px}
+.account-avatar-wrap .account-avatar{width:58px;height:58px;overflow:hidden;background-position:center;background-size:cover}
+.account-avatar-edit{
+ position:absolute;right:-3px;bottom:-3px;width:24px;height:24px;border-radius:50%;
+ display:flex;align-items:center;justify-content:center;cursor:pointer;
+ background:#5d4a7b;color:#fff;border:2px solid #17121f;font-size:13px;font-weight:900;
+ box-shadow:0 2px 6px rgba(0,0,0,.25)
+}
+.account-avatar-edit:hover{background:#745d97}
+</style>
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -4583,7 +4595,11 @@ body.supabase-authenticated #loginPanel {
 
     <div id="menuAccountPanel" class="site-menu-settings menu-account-settings" hidden>
       <div class="account-profile-hero">
-        <div id="accountAvatar" class="account-avatar">U</div>
+        <div class="account-avatar-wrap">
+          <div id="accountAvatar" class="account-avatar">U</div>
+          <label for="accountAvatarInput" class="account-avatar-edit" title="更換頭像">✎</label>
+          <input id="accountAvatarInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+        </div>
         <div class="account-profile-main">
           <div class="account-profile-eyebrow">個人資料</div>
           <div id="accountDisplayName" class="account-profile-name">使用者</div>
@@ -5936,7 +5952,7 @@ body.v40-night .account-divider{background:#374151;}
 
       try{
         const {data:profile,error}=await supabaseClient
-          .from("profiles").select("id,name,username").eq("id",user.id).maybeSingle();
+          .from("profiles").select("id,name,username,avatar_url").eq("id",user.id).maybeSingle();
         if(error) throw error;
 
         const displayName=profile?.name || profile?.username || "使用者";
@@ -5949,7 +5965,18 @@ body.v40-night .account-divider{background:#374151;}
         const avatar=document.getElementById("accountAvatar");
         if(nameEl) nameEl.textContent=displayName;
         if(userEl) userEl.textContent=username ? "@"+username : "";
-        if(avatar) avatar.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
+        if(avatar){
+          const avatarUrl=profile?.avatar_url || "";
+          if(avatarUrl){
+            avatar.textContent="";
+            avatar.style.backgroundImage=`url("${avatarUrl}")`;
+            avatar.style.backgroundSize="cover";
+            avatar.style.backgroundPosition="center";
+          }else{
+            avatar.style.backgroundImage="";
+            avatar.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
+          }
+        }
 
         refreshAccountCard();
         if(status) status.textContent="";
@@ -6031,6 +6058,70 @@ body.v40-night .account-divider{background:#374151;}
       }
       setAccountStatus("個人資料已更新");
       await loadAccountCard();
+    });
+
+    document.getElementById("accountAvatarInput")?.addEventListener("change",async(e)=>{
+      const file=e.target?.files?.[0];
+      if(!file) return;
+
+      const allowed=["image/png","image/jpeg","image/webp","image/gif"];
+      if(!allowed.includes(file.type)){
+        setAccountStatus("頭像格式限 PNG、JPG、WEBP、GIF",true);
+        e.target.value="";
+        return;
+      }
+      if(file.size>2*1024*1024){
+        setAccountStatus("頭像大小請勿超過 2 MB",true);
+        e.target.value="";
+        return;
+      }
+
+      const {data:{user}}=await supabaseClient.auth.getUser();
+      if(!user){
+        setAccountStatus("尚未登入",true);
+        return;
+      }
+
+      setAccountStatus("頭像上傳中...");
+      try{
+        const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
+        const filePath=`${user.id}/avatar_${Date.now()}.${ext}`;
+
+        const {error:uploadError}=await supabaseClient.storage
+          .from("avatars")
+          .upload(filePath,file,{upsert:true,contentType:file.type,cacheControl:"3600"});
+        if(uploadError) throw uploadError;
+
+        const {data:publicData}=supabaseClient.storage.from("avatars").getPublicUrl(filePath);
+        const avatarUrl=publicData?.publicUrl;
+        if(!avatarUrl) throw new Error("無法取得頭像網址");
+
+        const {error:updateError}=await supabaseClient
+          .from("profiles")
+          .update({avatar_url:avatarUrl})
+          .eq("id",user.id);
+        if(updateError) throw updateError;
+
+        const avatar=document.getElementById("accountAvatar");
+        if(avatar){
+          avatar.textContent="";
+          avatar.style.backgroundImage=`url("${avatarUrl}")`;
+          avatar.style.backgroundSize="cover";
+          avatar.style.backgroundPosition="center";
+        }
+
+        setAccountStatus("頭像已更新");
+        if(typeof syncCurrentUserDisplay==="function"){
+          await syncCurrentUserDisplay();
+        }else if(typeof loadAccountCard==="function"){
+          await loadAccountCard();
+        }
+      }catch(err){
+        console.error("頭像上傳失敗：",err);
+        setAccountStatus("頭像更新失敗："+(err?.message||"請確認 avatars 權限"),true);
+      }finally{
+        e.target.value="";
+      }
     });
 
     document.getElementById("accountChangePasswordBtn")?.addEventListener("click",async()=>{
