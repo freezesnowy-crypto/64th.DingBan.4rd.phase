@@ -4412,6 +4412,65 @@ button:active{transform:translateY(0);}
 .account-avatar-edit:hover{background:#745d97}
 </style>
 
+
+<style id="quiz-floating-nav-safe-area">
+/* 固定的頂端／底端按鈕不要蓋住首頁自選測驗，也不要擋到題目 */
+#scroll-btns{
+  position:fixed !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  z-index:9998 !important;
+  pointer-events:none !important;
+  display:flex !important;
+  gap:8px !important;
+  max-width:calc(100vw - 18px) !important;
+  box-sizing:border-box !important;
+}
+#scroll-btns button{
+  pointer-events:auto !important;
+  position:static !important;
+  margin:0 !important;
+  flex:0 0 auto !important;
+}
+#container{
+  padding-bottom:76px !important;
+}
+#selectedSubjectTestButton{
+  position:relative !important;
+  z-index:20 !important;
+  margin-bottom:14px !important;
+}
+#selectedSubjectTestPanel{
+  position:relative !important;
+  z-index:20 !important;
+  margin-bottom:18px !important;
+}
+@media(min-width:701px){
+  #scroll-btns{
+    bottom:14px !important;
+    top:auto !important;
+    flex-direction:row !important;
+  }
+}
+@media(max-width:700px){
+  #scroll-btns{
+    bottom:8px !important;
+    top:auto !important;
+    width:auto !important;
+    justify-content:center !important;
+  }
+  #scroll-btns button{
+    min-height:42px !important;
+    padding:8px 12px !important;
+    border-radius:10px !important;
+    font-size:14px !important;
+  }
+  #container{
+    padding-bottom:88px !important;
+  }
+}
+</style>
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -5951,6 +6010,7 @@ body.v40-night .account-divider{background:#374151;}
       if(!user) return;
 
       try{
+        const {data:{user:currentUser}}=await supabaseClient.auth.getUser();
         const {data:profile,error}=await supabaseClient
           .from("profiles").select("id,name,username,avatar_url").eq("id",user.id).maybeSingle();
         if(error) throw error;
@@ -5966,7 +6026,7 @@ body.v40-night .account-divider{background:#374151;}
         if(nameEl) nameEl.textContent=displayName;
         if(userEl) userEl.textContent=username ? "@"+username : "";
         if(avatar){
-          const avatarUrl=profile?.avatar_url || "";
+          const avatarUrl=profile?.avatar_url || currentUser?.user_metadata?.avatar_url || localStorage.getItem("currentUserAvatarUrl") || "";
           if(avatarUrl){
             avatar.textContent="";
             avatar.style.backgroundImage=`url("${avatarUrl}")`;
@@ -6096,11 +6156,20 @@ body.v40-night .account-divider{background:#374151;}
         const avatarUrl=publicData?.publicUrl;
         if(!avatarUrl) throw new Error("無法取得頭像網址");
 
+        // 先立即保存到 Auth user metadata，避免 profiles 沒有 avatar_url 欄位時頭像消失
+        const {error:authMetaError}=await supabaseClient.auth.updateUser({
+          data:{avatar_url:avatarUrl}
+        });
+        if(authMetaError) console.warn("Auth 頭像資料更新失敗：",authMetaError.message);
+
+        // profiles.avatar_url 有欄位時也同步保存；沒有欄位則不阻斷頭像顯示
         const {error:updateError}=await supabaseClient
           .from("profiles")
           .update({avatar_url:avatarUrl})
           .eq("id",user.id);
-        if(updateError) throw updateError;
+        if(updateError) console.warn("profiles.avatar_url 尚未可用，已改用 Auth metadata 保存：",updateError.message);
+
+        localStorage.setItem("currentUserAvatarUrl",avatarUrl);
 
         const avatar=document.getElementById("accountAvatar");
         if(avatar){
@@ -6111,10 +6180,9 @@ body.v40-night .account-divider{background:#374151;}
         }
 
         setAccountStatus("頭像已更新");
-        if(typeof syncCurrentUserDisplay==="function"){
-          await syncCurrentUserDisplay();
-        }else if(typeof loadAccountCard==="function"){
-          await loadAccountCard();
+        // 保持目前畫面，不再立即重刷整個帳號卡片，避免剛上傳的圖片被舊 profile 資料覆蓋
+        if(typeof refreshUserProfile==="function"){
+          try{ await refreshUserProfile(); }catch(ignore){}
         }
       }catch(err){
         console.error("頭像上傳失敗：",err);
@@ -6258,6 +6326,26 @@ body.v40-night .account-divider{background:#374151;}
       },0);
     }
   });
+})();
+</script>
+
+
+<script id="quiz-floating-nav-runtime-fix">
+(function(){
+  function fix(){
+    const box=document.getElementById("scroll-btns");
+    if(!box) return;
+    box.style.top="";
+    box.style.right="";
+    box.style.left="50%";
+    box.style.bottom=window.innerWidth<=700 ? "8px" : "14px";
+    box.style.transform="translateX(-50%)";
+    box.style.zIndex="9998";
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",fix,{once:true});
+  }else fix();
+  window.addEventListener("resize",fix,{passive:true});
 })();
 </script>
 
