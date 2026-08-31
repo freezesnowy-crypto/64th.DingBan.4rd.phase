@@ -4514,6 +4514,48 @@ button:active{transform:translateY(0);}
 }
 </style>
 
+
+<style id="avatar-no-letter-final">
+.account-avatar{
+  position:relative!important;
+  width:64px!important;
+  height:64px!important;
+  min-width:64px!important;
+  min-height:64px!important;
+  padding:0!important;
+  margin:0!important;
+  border-radius:50%!important;
+  overflow:hidden!important;
+  display:block!important;
+  box-sizing:border-box!important;
+  background:#2a2035!important;
+}
+.account-avatar-image{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  display:block!important;
+  object-fit:cover!important;
+  object-position:center!important;
+}
+.account-avatar-image[hidden]{display:none!important;}
+@media(max-width:700px){
+  .account-avatar{
+    width:60px!important;
+    height:60px!important;
+    min-width:60px!important;
+    min-height:60px!important;
+  }
+}
+</style>
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -4699,7 +4741,6 @@ body.supabase-authenticated #loginPanel {
       <div class="account-profile-hero">
         <div class="account-avatar-wrap">
           <div id="accountAvatar" class="account-avatar">
-            <span class="account-avatar-letter">U</span>
             <img id="accountAvatarImage" class="account-avatar-image" alt="使用者頭像" hidden>
           </div>
           <label for="accountAvatarInput" class="account-avatar-edit" title="更換頭像">✎</label>
@@ -6049,26 +6090,23 @@ body.v40-night .account-divider{background:#374151;}
     function renderAccountAvatar(avatarUrl, displayName){
       const box=document.getElementById("accountAvatar");
       const img=document.getElementById("accountAvatarImage");
-      const letter=box?.querySelector(".account-avatar-letter");
-      const cleanUrl=String(avatarUrl||"").trim();
+const cleanUrl=String(avatarUrl||"").trim();
 
       if(img && cleanUrl){
         // unique query avoids stale image cache after re-upload
         const finalUrl=cleanUrl+(cleanUrl.includes("?")?"&":"?")+"v="+Date.now();
         img.onload=()=>{
           img.hidden=false;
-          if(letter) letter.hidden=true;
+
         };
         img.onerror=()=>{
           img.hidden=true;
-          if(letter){ letter.hidden=false; letter.textContent=(String(displayName||"U").trim().charAt(0)||"U").toUpperCase(); }
-        };
+};
         img.src=finalUrl;
       }else if(img){
         img.hidden=true;
         img.removeAttribute("src");
-        if(letter){ letter.hidden=false; letter.textContent=(String(displayName||"U").trim().charAt(0)||"U").toUpperCase(); }
-      }else if(box){
+}else if(box){
         box.textContent=(String(displayName||"U").trim().charAt(0)||"U").toUpperCase();
       }
     }
@@ -8066,3 +8104,5 @@ updateButtonDisplay();
     .stats-summary-better { grid-template-columns:repeat(2,minmax(100px,1fr)); }
 }
 </style>
+
+<style id="avatar-letter-hard-hide">.account-avatar-letter{display:none!important;visibility:hidden!important;}</style>
