@@ -4276,7 +4276,7 @@ body.supabase-authenticated #loginPanel {
         <div class="account-profile-main">
           <div class="account-profile-eyebrow">個人資料</div>
           <div id="accountDisplayName" class="account-profile-name">使用者</div>
-          <div id="accountDisplayUsername" class="account-profile-username">@username</div>
+          <div id="accountDisplayUsername" class="account-profile-username">登入中…</div>
         </div>
       </div>
 
@@ -5628,8 +5628,11 @@ body.v40-night .account-divider{background:#374151;}
           .from("profiles").select("id,name,username").eq("id",user.id).maybeSingle();
         if(error) throw error;
 
-        const displayName=profile?.name || profile?.username || "使用者";
-        const username=profile?.username || "";
+        const authUsername = String(user.user_metadata?.username || "").trim();
+        const profileUsername = String(profile?.username || "").trim();
+        const loginId = String(user.id || "").trim();
+        const username = profileUsername || authUsername || loginId;
+        const displayName = String(profile?.name || "").trim() || profileUsername || authUsername || "使用者";
         nameInput.value=profile?.name || "";
         usernameInput.value=username;
 
@@ -5637,7 +5640,7 @@ body.v40-night .account-divider{background:#374151;}
         const userEl=document.getElementById("accountDisplayUsername");
         const avatar=document.getElementById("accountAvatar");
         if(nameEl) nameEl.textContent=displayName;
-        if(userEl) userEl.textContent=username ? "@"+username : "";
+        if(userEl) userEl.textContent=username ? "@"+username : "@"+loginId;
         if(avatar) avatar.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
 
         refreshAccountCard();
