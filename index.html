@@ -40,21 +40,6 @@ function setLoginStatus(message, isError = false) {
   el.style.color = isError ? "#c62828" : "#2e7d32";
 }
 
-// profiles 尚未建立或讀取失敗時，仍以登入帳號的 metadata 顯示使用者資訊。
-function getDisplayProfile(profile, user) {
-  const emailUsername = String(user?.email || "").replace(/@exam\.local$/i, "").trim();
-  const username = String(profile?.username || user?.user_metadata?.username || emailUsername || "").trim();
-  const name = String(profile?.name || user?.user_metadata?.name || username || "使用者").trim() || "使用者";
-  return { name, username };
-}
-
-function updateSiteMenuUser(profile, user) {
-  const el = document.getElementById("siteMenuUser");
-  if (!el || !user) return;
-  const display = getDisplayProfile(profile, user);
-  el.textContent = display.username ? `${display.name}　帳號：${display.username}` : display.name;
-}
-
 function showLoginMode(mode) {
   const loginForm = document.getElementById("loginForm");
   const registerForm = document.getElementById("registerForm");
@@ -199,24 +184,21 @@ async function refreshUserProfile() {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (error) console.warn("讀取 profiles 失敗，改用登入帳號資訊顯示：", error);
-
-  const displayProfile = getDisplayProfile(error ? null : profile, user);
-  updateSiteMenuUser(error ? null : profile, user);
+  if (error) {
+    console.warn("讀取 profiles 失敗：", error);
+    return null;
+  }
 
   const panel = document.getElementById("loginPanel");
-  if (panel) {
+  if (panel && profile) {
     panel.innerHTML = `
       <div style="font-size:20px;font-weight:bold;text-align:center">✅ 已登入</div>
-      <div id="loginProfileName" style="text-align:center;margin-top:8px"></div>
-      <div style="text-align:center;margin-top:4px;font-size:14px;color:#666">帳號：<span id="loginProfileUsername"></span></div>
+      <div style="text-align:center;margin-top:8px">${profile.name || ""}</div>
+      <div style="text-align:center;margin-top:4px;font-size:14px;color:#666">帳號：${profile.username || ""}</div>
       <button type="button" onclick="logoutUser()" style="display:block;margin:12px auto 0;padding:9px 18px;cursor:pointer">登出</button>
     `;
-    // 名稱與帳號皆視為純文字，避免把使用者輸入當成 HTML 執行。
-    panel.querySelector("#loginProfileName").textContent = displayProfile.name;
-    panel.querySelector("#loginProfileUsername").textContent = displayProfile.username;
   }
-  return displayProfile;
+  return profile;
 }
 
 async function logoutUser() {
@@ -4096,69 +4078,16 @@ body.supabase-authenticated #container{
 .menu-account-settings .account-divider{margin:10px 0;}
 </style>
 
-<style id="day-mode-soft-green-background">
-body.v40-day,body:not(.v40-night){background:linear-gradient(135deg,#dfe9df,#d3e1d5 55%,#dbe7dc)!important;color:#000!important}
-body.v40-day .left,body:not(.v40-night) .left,body.v40-day #container table,body:not(.v40-night) #container table{background:#cfdccf!important;color:#000!important;border-color:#aabdaa!important}
-body.v40-day #container th,body:not(.v40-night) #container th{background:#bccfbd!important;color:#000!important}
-body.v40-day .home-subject-row,body:not(.v40-night) .home-subject-row,body.v40-day #fullQuestionRow,body:not(.v40-night) #fullQuestionRow,body.v40-day #shuffleRow,body:not(.v40-night) #shuffleRow,body.v40-day #wrongOnlyRow,body:not(.v40-night) #wrongOnlyRow,body.v40-day #homepageAnswerSummary .answer-stat,body:not(.v40-night) #homepageAnswerSummary .answer-stat,body.v40-day .stats-summary-better .stat-card,body:not(.v40-night) .stats-summary-better .stat-card{background:#cbd9cc!important;color:#000!important;border-color:#a8bba9!important}
-body.v40-day #container button,body:not(.v40-night) #container button{background:#b8cbb9!important;color:#000!important;border-color:#98ad99!important}
-body.v40-day #container select,body:not(.v40-night) #container select,body.v40-day #container input[type="text"],body:not(.v40-night) #container input[type="text"],body.v40-day #container input[type="password"],body:not(.v40-night) #container input[type="password"],body.v40-day #container textarea,body:not(.v40-night) #container textarea{background:#d9e4da!important;color:#000!important;border-color:#9fb2a0!important}
-body.v40-day .site-menu-panel,body:not(.v40-night) .site-menu-panel{background:#d1ddd2!important;color:#000!important;border-color:#a6b8a7!important}
-body.v40-day .site-menu-item,body:not(.v40-night) .site-menu-item{background:#bdcfbe!important;color:#000!important;border-color:#9fb0a0!important}
-body.v40-day #container tr.incorrectRow,body:not(.v40-night) #container tr.incorrectRow,body.v40-day .incorrectRow,body:not(.v40-night) .incorrectRow{background:#e7b8bd!important;color:#000!important;border-color:#c96a74!important}
-body.v40-day #container tr.correctRow,body:not(.v40-night) #container tr.correctRow,body.v40-day .correctRow,body:not(.v40-night) .correctRow{background:#b9d8c0!important;color:#000!important}
-</style>
-
-<style id="v40-readable-stats-and-menu">
-/* 日間統計：黑字與較大的數字，考前快速掃讀更清楚。 */
-body:not(.v40-night) #homepageAnswerSummary .answer-stat-label,
-body:not(.v40-night) #homepageAnswerSummary .answer-stat-value,
-body:not(.v40-night) #homepageAnswerSummary .answer-stat.correct .answer-stat-label,
-body:not(.v40-night) #homepageAnswerSummary .answer-stat.correct .answer-stat-value,
-body:not(.v40-night) #homepageAnswerSummary .answer-stat.wrong .answer-stat-label,
-body:not(.v40-night) #homepageAnswerSummary .answer-stat.wrong .answer-stat-value,
-body:not(.v40-night) #homepageAnswerSummary .answer-stat.accuracy .answer-stat-label,
-body:not(.v40-night) #homepageAnswerSummary .answer-stat.accuracy .answer-stat-value,
-body:not(.v40-night) .stats-summary-better .stat-label,
-body:not(.v40-night) .stats-summary-better .stat-value{color:#000 !important;}
-
-#homepageAnswerSummary .answer-stat-label,
-.stats-summary-better .stat-label{font-size:17px;font-weight:800;}
-#homepageAnswerSummary .answer-stat-value,
-.stats-summary-better .stat-value{font-size:34px;font-weight:900;line-height:1.18;}
-
-/* 電腦：功能以兩欄大按鈕呈現；每個按鈕至少 48px，易於點選。 */
-.site-menu-toggle{width:52px;height:52px;border-radius:15px;font-size:25px;}
-.site-menu-panel{width:min(410px,calc(100vw - 28px));padding:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
-.site-menu-title,.site-menu-user,.site-menu-settings{grid-column:1 / -1;}
-.site-menu-title{font-size:20px;padding:3px 4px 0;}
-.site-menu-user{font-size:14px;margin-bottom:2px;padding-bottom:10px;}
-.site-menu-item{min-height:50px;margin:0 !important;padding:11px 12px !important;font-size:16px !important;font-weight:800;line-height:1.25;text-align:left;}
-.site-menu-item:focus-visible,.site-menu-toggle:focus-visible{outline:3px solid #2563eb;outline-offset:2px;}
-.site-menu-settings{margin-top:2px;}
-
-/* 班排行：日間純黑；夜間用明亮暖白，避免對比不足。 */
-body:not(.v40-night) #stats-ranking-panel,
-body:not(.v40-night) #stats-ranking-panel div,
-body:not(.v40-night) #stats-ranking-panel table,
-body:not(.v40-night) #stats-ranking-panel th,
-body:not(.v40-night) #stats-ranking-panel td{color:#000 !important;}
-body.v40-night #stats-ranking-panel,
-body.v40-night #stats-ranking-panel div,
-body.v40-night #stats-ranking-panel table,
-body.v40-night #stats-ranking-panel th,
-body.v40-night #stats-ranking-panel td{color:#fff4c7 !important;}
-
-/* 手機：改成滿寬、靠近拇指操作範圍的面板，按鈕保持兩欄。 */
-@media(max-width:600px){
-  #homepageAnswerSummary .answer-stat-label,.stats-summary-better .stat-label{font-size:16px;}
-  #homepageAnswerSummary .answer-stat-value,.stats-summary-better .stat-value{font-size:30px;}
-  #homepageAnswerSummary .answer-stat{padding:13px 7px;}
-  .site-menu{top:8px;right:8px;}
-  .site-menu-toggle{width:50px;height:50px;font-size:24px;}
-  .site-menu-panel{position:fixed;top:66px;left:10px;right:10px;width:auto;max-height:calc(100vh - 76px) !important;padding:12px;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;border-radius:16px;}
-  .site-menu-item{min-height:52px;padding:10px 9px !important;font-size:15px !important;}
-}
+<style id="final-green-purple-theme">
+body.v40-day,body:not(.v40-night){background:#DCE8DE!important;color:#26332A!important}
+body.v40-day .left,body:not(.v40-night) .left,body.v40-day #container table,body:not(.v40-night) #container table{background:#C9D8CB!important;color:#26332A!important;border-color:#AFC0B1!important}
+body.v40-day #container th,body:not(.v40-night) #container th,body.v40-day .home-subject-row,body:not(.v40-night) .home-subject-row,body.v40-day #fullQuestionRow,body:not(.v40-night) #fullQuestionRow,body.v40-day #shuffleRow,body:not(.v40-night) #shuffleRow,body.v40-day #wrongOnlyRow,body:not(.v40-night) #wrongOnlyRow,body.v40-day .site-menu-panel,body:not(.v40-night) .site-menu-panel{background:#C9D8CB!important;color:#26332A!important}
+body.v40-day #container button,body:not(.v40-night) #container button,body.v40-day .site-menu-item,body:not(.v40-night) .site-menu-item{background:#B5C8B8!important;color:#26332A!important;border-color:#9DB1A0!important}
+body.v40-night{background:#17141C!important;color:#F0EBF5!important}
+body.v40-night .left,body.v40-night #container table,body.v40-night #container th,body.v40-night .home-subject-row,body.v40-night #fullQuestionRow,body.v40-night #shuffleRow,body.v40-night .site-menu-panel{background:#24202B!important;color:#F0EBF5!important;border-color:#453B50!important}
+body.v40-night #container button,body.v40-night .site-menu-item{background:#342D40!important;color:#F0EBF5!important;border-color:#514660!important}
+body.v40-day .incorrectRow{background:#E7B8BD!important;color:#701821!important}body.v40-night .incorrectRow{background:#5A2630!important;color:#FFD9DE!important}
+body.v40-day .correctRow{background:#B9D8C0!important;color:#184D2D!important}body.v40-night .correctRow{background:#21392D!important;color:#D7F5E2!important}
 </style>
 </head>
 <style>
@@ -4323,13 +4252,13 @@ body.supabase-authenticated #loginPanel {
 
 <!-- 功能表：登入後顯示 -->
 <div id="siteMenu" class="site-menu" aria-label="功能表">
-  <button id="siteMenuToggle" type="button" class="site-menu-toggle" aria-label="開啟功能表" aria-expanded="false" aria-controls="siteMenuPanel">☰</button>
-  <div id="siteMenuPanel" class="site-menu-panel" role="dialog" aria-label="功能表" hidden>
+  <button id="siteMenuToggle" type="button" class="site-menu-toggle" aria-expanded="false" aria-controls="siteMenuPanel">☰</button>
+  <div id="siteMenuPanel" class="site-menu-panel" hidden>
     <div class="site-menu-title">☰ 功能表</div>
     <div id="siteMenuUser" class="site-menu-user"></div>
     <button type="button" class="site-menu-item" id="menuSubjectsBtn">📚 各科狀況</button>
     <button type="button" class="site-menu-item" id="menuRiskBtn">⚠️ 錯題</button>
-    <button type="button" class="site-menu-item" id="menuRankBtn">🏆 班排行</button>
+    <button type="button" class="site-menu-item" id="menuRankBtn">🏆 使用者答題排行</button>
     <button type="button" class="site-menu-item" id="menuSettingsBtn">⚙️ 設定</button>
 <button type="button" class="site-menu-item" id="menuAccountBtn">👤 帳號設定</button>
     <button type="button" class="site-menu-item" id="menuThemeBtn">🌙 日／夜模式</button>
@@ -4343,14 +4272,11 @@ body.supabase-authenticated #loginPanel {
 
     <div id="menuAccountPanel" class="site-menu-settings menu-account-settings" hidden>
       <div class="account-profile-hero">
-        <div id="accountAvatar" class="account-avatar">
-          <img id="accountAvatarImage" class="account-avatar-image" alt="使用者頭像" hidden>
-          <span class="account-avatar-letter">U</span>
-        </div>
+        <div id="accountAvatar" class="account-avatar">U</div>
         <div class="account-profile-main">
           <div class="account-profile-eyebrow">個人資料</div>
           <div id="accountDisplayName" class="account-profile-name">使用者</div>
-          <div id="accountDisplayUsername" class="account-profile-username">帳號載入中…</div>
+          <div id="accountDisplayUsername" class="account-profile-username">@username</div>
         </div>
       </div>
 
@@ -5541,11 +5467,8 @@ body.v40-night .account-reset-btn{background:#403646;color:#eadcff;}
   width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   flex:0 0 58px;background:linear-gradient(135deg,#b197ff 0%,#7656d8 100%);
   border:2px solid rgba(255,255,255,.9);font-weight:900;font-size:25px;
-  box-shadow:0 5px 14px rgba(0,0,0,.22);position:relative;overflow:hidden;
+  box-shadow:0 5px 14px rgba(0,0,0,.22);
 }
-.account-avatar-image{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center;border:0;}
-.account-avatar-letter{position:absolute;inset:0;display:grid;place-items:center;line-height:1;pointer-events:none;}
-.account-avatar.has-avatar-image .account-avatar-letter{display:none;}
 .account-profile-main{min-width:0;}
 .account-profile-eyebrow{font-size:10px;letter-spacing:.8px;opacity:.82;}
 .account-profile-name{font-size:22px;font-weight:900;line-height:1.15;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -5616,30 +5539,6 @@ body.v40-night .account-divider{background:#374151;}
   function init(){
     applyTheme();
 
-    // 頭像圖片與姓名首字母互斥顯示；圖片以 cover 裁切填滿圓形容器。
-    const avatar=document.getElementById("accountAvatar");
-    const refreshAvatarLayout=()=>{
-      const image=avatar?.querySelector(".account-avatar-image, img");
-      const letter=avatar?.querySelector(".account-avatar-letter");
-      if(!avatar || !image) return;
-      const hasSource=Boolean(image.getAttribute("src"));
-      image.hidden=!hasSource;
-      avatar.classList.toggle("has-avatar-image",hasSource);
-      if(letter) letter.hidden=hasSource;
-    };
-    if(avatar){
-      refreshAvatarLayout();
-      avatar.addEventListener("load",refreshAvatarLayout,true);
-      avatar.addEventListener("error",()=>{
-        const image=avatar.querySelector(".account-avatar-image, img");
-        if(image) image.hidden=true;
-        avatar.classList.remove("has-avatar-image");
-        const letter=avatar.querySelector(".account-avatar-letter");
-        if(letter) letter.hidden=false;
-      },true);
-      new MutationObserver(refreshAvatarLayout).observe(avatar,{childList:true,subtree:true,attributes:true,attributeFilter:["src"]});
-    }
-
     const toggle=document.getElementById("siteMenuToggle");
     const panel=document.getElementById("siteMenuPanel");
     if(!toggle||!panel) return;
@@ -5648,9 +5547,6 @@ body.v40-night .account-divider{background:#374151;}
     document.addEventListener("click",e=>{
       const menu=document.getElementById("siteMenu");
       if(menu && !menu.contains(e.target)) openPanel(false);
-    });
-    document.addEventListener("keydown",e=>{
-      if(e.key === "Escape") openPanel(false);
     });
 
     document.getElementById("menuThemeBtn")?.addEventListener("click",()=>{
@@ -5730,24 +5626,19 @@ body.v40-night .account-divider{background:#374151;}
       try{
         const {data:profile,error}=await supabaseClient
           .from("profiles").select("id,name,username").eq("id",user.id).maybeSingle();
-        // profiles 沒有資料或暫時無法讀取時，仍使用登入帳號 metadata／email 顯示名稱。
-        if(error) console.warn("讀取帳號設定失敗，改用登入帳號資訊：",error);
+        if(error) throw error;
 
-        const displayProfile=getDisplayProfile(error ? null : profile, user);
-        const displayName=displayProfile.name;
-        const username=displayProfile.username;
-        nameInput.value=(error ? null : profile)?.name || displayName;
+        const displayName=profile?.name || profile?.username || "使用者";
+        const username=profile?.username || "";
+        nameInput.value=profile?.name || "";
         usernameInput.value=username;
-        updateSiteMenuUser(error ? null : profile, user);
 
         const nameEl=document.getElementById("accountDisplayName");
         const userEl=document.getElementById("accountDisplayUsername");
         const avatar=document.getElementById("accountAvatar");
-        const avatarLetter=avatar?.querySelector(".account-avatar-letter");
         if(nameEl) nameEl.textContent=displayName;
-        if(userEl) userEl.textContent=username ? "@"+username : "帳號未設定";
-        if(avatarLetter) avatarLetter.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
-        else if(avatar) avatar.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
+        if(userEl) userEl.textContent=username ? "@"+username : "";
+        if(avatar) avatar.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
 
         refreshAccountCard();
         if(status) status.textContent="";
@@ -5980,8 +5871,6 @@ body.v40-night .account-divider{background:#374151;}
     totalScore = 0;//總分
     questions={};
     wrongOnly = false; // 只複習曾經答錯過的題目
-    // 僅「測驗模式」會計入班排行；刷題與錯題複習只保留個人練習紀錄。
-    isRankedExamMode = false;
 
     console.log(data);
 
@@ -6026,7 +5915,6 @@ body.v40-night .account-divider{background:#374151;}
     //函數:初始化題目物件
     function prepareQuestions(subject,full, shuffle) {
 	fullQuestion=full;
-	isRankedExamMode = Boolean(shuffle && !full && !wrongOnly);
 	if(subject.includes("準則測驗")){
 	    questions["是非"]=[];
 	    questions["單選"]=[];
@@ -6178,7 +6066,6 @@ body.v40-night .account-divider{background:#374151;}
     // 自選科目測驗：保留各科原始題型與題目，只合併使用者勾選的科目
     function prepareSelectedSubjects(selectedSubjects, full, shuffle) {
         fullQuestion = full;
-        isRankedExamMode = Boolean(shuffle && !full && !wrongOnly);
         const picked = Array.isArray(selectedSubjects) ? selectedSubjects.filter(s => data[s] && data[s]["是非"] !== undefined) : [];
         questions = {"是非": [], "單選": [], "複選": []};
 
@@ -6296,8 +6183,6 @@ body.v40-night .account-divider{background:#374151;}
             const stats = {};
             (rows || []).forEach(row => {
                 const questionId = String(row.question_id || "");
-                // 班排行的獨立紀錄不混入個人錯題與練習統計。
-                if (questionId.startsWith("rank_exam||")) return;
                 const separator = questionId.indexOf("||");
                 const subject = row.subject || (separator >= 0 ? questionId.slice(0, separator) : "其他科目");
                 const question = separator >= 0 ? questionId.slice(separator + 2) : questionId;
@@ -6377,45 +6262,6 @@ body.v40-night .account-divider{background:#374151;}
         }
     }
 
-    // 班排行使用獨立的 question_id 前綴，不會混入刷題／錯題複習資料，無須變更既有資料表欄位。
-    async function saveRankingQuestionToSupabase(question, correct, questionType) {
-        try {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user || !question || !question["題目"]) return;
-
-            const subject = question.__subject || "其他科目";
-            const cleanQuestion = String(question["題目"] || "").replace(/<[^>]*>/g, "").trim();
-            const questionId = "rank_exam||" + subject + "||" + cleanQuestion;
-            const { data: oldRow, error: readError } = await supabaseClient
-                .from("question_stats")
-                .select("attempts,correct,wrong,correct_streak")
-                .eq("user_id", user.id)
-                .eq("question_id", questionId)
-                .maybeSingle();
-            if (readError) throw readError;
-
-            const now = new Date().toISOString();
-            const payload = {
-                user_id: user.id,
-                question_id: questionId,
-                subject,
-                question_type: JSON.stringify({ mode: "班排測驗", type: questionType || "", name: getDisplayProfile(null, user).name }),
-                attempts: (Number(oldRow?.attempts) || 0) + 1,
-                correct: (Number(oldRow?.correct) || 0) + (correct ? 1 : 0),
-                wrong: (Number(oldRow?.wrong) || 0) + (correct ? 0 : 1),
-                correct_streak: correct ? (Number(oldRow?.correct_streak) || 0) + 1 : 0,
-                last_answered_at: now,
-                updated_at: now
-            };
-            const { error: saveError } = await supabaseClient
-                .from("question_stats")
-                .upsert(payload, { onConflict: "user_id,question_id" });
-            if (saveError) throw saveError;
-        } catch (e) {
-            console.warn("班排行測驗紀錄同步失敗：", e);
-        }
-    }
-
     function recordQuestionResult(question, correct, questionType) {
         if (!question || !question["題目"]) return;
 
@@ -6458,9 +6304,6 @@ body.v40-night .account-divider{background:#374151;}
 
         // 同步同一個 user_id 的 Supabase question_stats
         void saveQuestionToSupabase(question, correct, questionType);
-
-        // 只有一般測驗模式（非刷題、非錯題複習）才另存班排行資料。
-        if (isRankedExamMode) void saveRankingQuestionToSupabase(question, correct, questionType);
     }
     function findQuestionData(record) {
         try {
@@ -6516,35 +6359,31 @@ body.v40-night .account-divider{background:#374151;}
             alert("雲端紀錄重置失敗，請確認 Supabase RLS 權限。");
         }
     }
-    // 班排行：只採用 question_id 以 rank_exam|| 開頭的測驗模式紀錄。
+    // 使用者答題排行：從 Supabase quiz_stats 取得跨使用者資料
     async function loadUserAnswerRanking(target) {
         if (!target) return;
-        target.innerHTML = '<div style="padding:10px;color:#777">載入班排行中...</div>';
+        target.innerHTML = '<div style="padding:10px;color:#777">載入線上排名中...</div>';
         try {
             const { data: rows, error } = await supabaseClient
                 .from("question_stats")
-                .select("user_id,attempts,correct,wrong,question_id,question_type")
-                .like("question_id", "rank_exam||%");
+                .select("user_id,attempts,correct,wrong");
             if (error) throw error;
 
             const users = new Map();
             (rows || []).forEach(row => {
                 const userId = String(row.user_id || "").trim();
                 if (!userId) return;
-                let storedName = "";
-                try { storedName = String(JSON.parse(row.question_type || "{}").name || "").trim(); } catch(e) {}
                 if (!users.has(userId)) {
-                    users.set(userId, { userId, name:storedName || "使用者", username:"", total:0, correct:0, wrong:0 });
+                    users.set(userId, { userId, name:"使用者", username:"", total:0, correct:0, wrong:0 });
                 }
                 const u = users.get(userId);
-                if (storedName) u.name = storedName;
                 u.total += Math.max(0, Number(row.attempts) || 0);
                 u.correct += Math.max(0, Number(row.correct) || 0);
                 u.wrong += Math.max(0, Number(row.wrong) || 0);
             });
 
             if (!users.size) {
-                target.innerHTML = '<div style="color:#888">目前尚無測驗模式的班排行資料</div>';
+                target.innerHTML = '<div style="color:#888">目前還沒有線上答題資料</div>';
                 return;
             }
 
@@ -6580,12 +6419,13 @@ body.v40-night .account-divider{background:#374151;}
                 .filter(u => u.total > 0)
                 .sort((a,b) =>
                     b.winRate - a.winRate ||
+                    b.correct - a.correct ||
                     b.total - a.total ||
                     a.name.localeCompare(b.name, "zh-Hant")
                 );
 
             if (!ranking.length) {
-                target.innerHTML = '<div style="color:#888">目前尚無可排名的測驗資料</div>';
+                target.innerHTML = '<div style="color:#888">目前還沒有可排名的答題資料</div>';
                 return;
             }
 
@@ -6596,18 +6436,18 @@ body.v40-night .account-divider{background:#374151;}
                       <tr>
                         <th style="padding:9px">排名</th>
                         <th style="padding:9px;text-align:left">使用者</th>
-                        <th style="padding:9px">答題數</th>
+                        <th style="padding:9px">總數</th>
                         <th style="padding:9px">答對</th>
                         <th style="padding:9px">答錯</th>
                         <th style="padding:9px">勝率</th>
                       </tr>
                     </thead>
                     <tbody>
-                      ${ranking.slice(0,50).map((u,i)=>`
+                      ${ranking.map((u,i)=>`
                         <tr>
                           <td style="padding:9px;font-weight:900">${i+1}</td>
                           <td style="padding:9px;text-align:left;font-weight:800">${escapeHtml(u.name)}</td>
-                           <td style="padding:9px">${u.total}</td>
+                          <td style="padding:9px">${u.total}</td>
                           <td style="padding:9px;color:#2e7d32;font-weight:800">${u.correct}</td>
                           <td style="padding:9px;color:#b42318;font-weight:800">${u.wrong}</td>
                           <td style="padding:9px;font-weight:900">${u.winRate.toFixed(1)}%</td>
@@ -6616,11 +6456,11 @@ body.v40-night .account-divider{background:#374151;}
                     </tbody>
                   </table>
                 </div>
-                <div style="margin-top:8px;color:#777;font-size:12px">僅計測驗模式；最多顯示 50 名。排名方式：正確率由高至低；正確率相同時，以答題數較多者優先。</div>
+                <div style="margin-top:8px;color:#777;font-size:12px">排名規則：勝率 → 答對題數 → 總作答數</div>
             `;
         } catch(error) {
-            console.error("班排行載入失敗：",error);
-            target.innerHTML='<div style="color:#b42318">目前無法讀取班排行，請確認 Supabase 的 question_stats / profiles 權限設定。</div>';
+            console.error("使用者答題排行載入失敗：",error);
+            target.innerHTML='<div style="color:#b42318">目前無法讀取線上排名，請確認 Supabase 的 question_stats / profiles 權限設定。</div>';
         }
     }
 
@@ -6760,7 +6600,7 @@ body.v40-night .account-divider{background:#374151;}
         const rankPanel = document.createElement("div");
         rankPanel.id = "stats-ranking-panel";
         rankPanel.style.cssText = "display:none;position:relative;z-index:1;width:calc(100% - 20px);max-width:1100px;box-sizing:border-box;margin:12px auto;padding:12px;border:2px solid #f0ad4e;border-radius:14px;background:rgba(255,255,255,.94);font-size:16px;line-height:1.55;";
-        rankPanel.innerHTML = `<div id="stats-ranking" style="font-weight:bold;margin-bottom:7px;font-size:18px">🏆 班排行</div><div style="margin-bottom:7px;font-size:13px;color:#666">僅計測驗模式作答；顯示前 50 名。正確率相同時，以答題數較多者優先。</div><div id="user-answer-ranking-list" style="color:#777">載入中...</div>`;
+        rankPanel.innerHTML = `<div id="stats-ranking" style="font-weight:bold;margin-bottom:7px;font-size:18px">🏆 線上排名</div><div id="user-answer-ranking-list" style="color:#777">載入中...</div>`;
         document.getElementById("container").appendChild(rankPanel);
         loadUserAnswerRanking(document.getElementById("user-answer-ranking-list"));
     
@@ -6920,7 +6760,7 @@ const colorMap = {
         fullQuestionRow.style.cssText = "display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;text-align:left;margin:7px 0;background:#ccf3e2;border-radius:10px;padding:9px 11px;box-sizing:border-box;font-size:15px;font-weight:700;";
         let label3 = document.createElement("label");
         label3.htmlFor = "fullQuestion";
-        label3.innerHTML = "刷題模式（所有題目，不列入班排行）";
+        label3.innerHTML = "刷題模式(所有題目)";
         let check2 = document.createElement("input");
         check2.type = "checkbox";
         check2.id = "fullQuestion";
@@ -6933,19 +6773,10 @@ const colorMap = {
         shuffleRow.style.cssText = "display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;text-align:left;margin:7px 0;background:#ccf3e2;border-radius:10px;padding:9px 11px;box-sizing:border-box;font-size:15px;font-weight:700;";
         let label2 = document.createElement("label");
         label2.htmlFor = "needShuffle";
-        label2.innerHTML = "測驗模式（選項打亂，列入班排行）";
+        label2.innerHTML = "測驗模式(選項打亂)";
         let check = document.createElement("input");
         check.type = "checkbox";
         check.id = "needShuffle";
-        check.addEventListener("change", function () {
-            if (this.checked) {
-                check2.checked = false;
-                check3.checked = false;
-            }
-        });
-        check2.addEventListener("change", function () {
-            if (this.checked) check.checked = false;
-        });
         shuffleRow.appendChild(check);
         shuffleRow.appendChild(label2);
         document.getElementById("container").appendChild(shuffleRow);
@@ -6960,9 +6791,6 @@ const colorMap = {
         let check3 = document.createElement("input");
         check3.type = "checkbox";
         check3.id = "wrongOnly";
-        check3.addEventListener("change", function () {
-            if (this.checked) check.checked = false;
-        });
         wrongOnlyRow.appendChild(check3);
         wrongOnlyRow.appendChild(label4);
         document.getElementById("container").appendChild(wrongOnlyRow);
