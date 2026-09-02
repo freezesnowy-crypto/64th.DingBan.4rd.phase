@@ -4137,6 +4137,18 @@ body:not(.v40-night) .stats-summary-better .stat-value{color:#000 !important;}
 .site-menu-item:focus-visible,.site-menu-toggle:focus-visible{outline:3px solid #2563eb;outline-offset:2px;}
 .site-menu-settings{margin-top:2px;}
 
+/* 班排行：日間純黑；夜間用明亮暖白，避免對比不足。 */
+body:not(.v40-night) #stats-ranking-panel,
+body:not(.v40-night) #stats-ranking-panel div,
+body:not(.v40-night) #stats-ranking-panel table,
+body:not(.v40-night) #stats-ranking-panel th,
+body:not(.v40-night) #stats-ranking-panel td{color:#000 !important;}
+body.v40-night #stats-ranking-panel,
+body.v40-night #stats-ranking-panel div,
+body.v40-night #stats-ranking-panel table,
+body.v40-night #stats-ranking-panel th,
+body.v40-night #stats-ranking-panel td{color:#fff4c7 !important;}
+
 /* 手機：改成滿寬、靠近拇指操作範圍的面板，按鈕保持兩欄。 */
 @media(max-width:600px){
   #homepageAnswerSummary .answer-stat-label,.stats-summary-better .stat-label{font-size:16px;}
@@ -4331,11 +4343,14 @@ body.supabase-authenticated #loginPanel {
 
     <div id="menuAccountPanel" class="site-menu-settings menu-account-settings" hidden>
       <div class="account-profile-hero">
-        <div id="accountAvatar" class="account-avatar">U</div>
+        <div id="accountAvatar" class="account-avatar">
+          <img id="accountAvatarImage" class="account-avatar-image" alt="使用者頭像" hidden>
+          <span class="account-avatar-letter">U</span>
+        </div>
         <div class="account-profile-main">
           <div class="account-profile-eyebrow">個人資料</div>
           <div id="accountDisplayName" class="account-profile-name">使用者</div>
-          <div id="accountDisplayUsername" class="account-profile-username">@username</div>
+          <div id="accountDisplayUsername" class="account-profile-username">帳號載入中…</div>
         </div>
       </div>
 
@@ -5526,8 +5541,11 @@ body.v40-night .account-reset-btn{background:#403646;color:#eadcff;}
   width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   flex:0 0 58px;background:linear-gradient(135deg,#b197ff 0%,#7656d8 100%);
   border:2px solid rgba(255,255,255,.9);font-weight:900;font-size:25px;
-  box-shadow:0 5px 14px rgba(0,0,0,.22);
+  box-shadow:0 5px 14px rgba(0,0,0,.22);position:relative;overflow:hidden;
 }
+.account-avatar-image{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center;border:0;}
+.account-avatar-letter{position:absolute;inset:0;display:grid;place-items:center;line-height:1;pointer-events:none;}
+.account-avatar.has-avatar-image .account-avatar-letter{display:none;}
 .account-profile-main{min-width:0;}
 .account-profile-eyebrow{font-size:10px;letter-spacing:.8px;opacity:.82;}
 .account-profile-name{font-size:22px;font-weight:900;line-height:1.15;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -5597,6 +5615,30 @@ body.v40-night .account-divider{background:#374151;}
 
   function init(){
     applyTheme();
+
+    // 頭像圖片與姓名首字母互斥顯示；圖片以 cover 裁切填滿圓形容器。
+    const avatar=document.getElementById("accountAvatar");
+    const refreshAvatarLayout=()=>{
+      const image=avatar?.querySelector(".account-avatar-image, img");
+      const letter=avatar?.querySelector(".account-avatar-letter");
+      if(!avatar || !image) return;
+      const hasSource=Boolean(image.getAttribute("src"));
+      image.hidden=!hasSource;
+      avatar.classList.toggle("has-avatar-image",hasSource);
+      if(letter) letter.hidden=hasSource;
+    };
+    if(avatar){
+      refreshAvatarLayout();
+      avatar.addEventListener("load",refreshAvatarLayout,true);
+      avatar.addEventListener("error",()=>{
+        const image=avatar.querySelector(".account-avatar-image, img");
+        if(image) image.hidden=true;
+        avatar.classList.remove("has-avatar-image");
+        const letter=avatar.querySelector(".account-avatar-letter");
+        if(letter) letter.hidden=false;
+      },true);
+      new MutationObserver(refreshAvatarLayout).observe(avatar,{childList:true,subtree:true,attributes:true,attributeFilter:["src"]});
+    }
 
     const toggle=document.getElementById("siteMenuToggle");
     const panel=document.getElementById("siteMenuPanel");
@@ -5688,21 +5730,24 @@ body.v40-night .account-divider{background:#374151;}
       try{
         const {data:profile,error}=await supabaseClient
           .from("profiles").select("id,name,username").eq("id",user.id).maybeSingle();
-        if(error) throw error;
+        // profiles 沒有資料或暫時無法讀取時，仍使用登入帳號 metadata／email 顯示名稱。
+        if(error) console.warn("讀取帳號設定失敗，改用登入帳號資訊：",error);
 
-        const displayProfile=getDisplayProfile(profile, user);
+        const displayProfile=getDisplayProfile(error ? null : profile, user);
         const displayName=displayProfile.name;
         const username=displayProfile.username;
-        nameInput.value=profile?.name || displayName;
+        nameInput.value=(error ? null : profile)?.name || displayName;
         usernameInput.value=username;
-        updateSiteMenuUser(profile, user);
+        updateSiteMenuUser(error ? null : profile, user);
 
         const nameEl=document.getElementById("accountDisplayName");
         const userEl=document.getElementById("accountDisplayUsername");
         const avatar=document.getElementById("accountAvatar");
+        const avatarLetter=avatar?.querySelector(".account-avatar-letter");
         if(nameEl) nameEl.textContent=displayName;
-        if(userEl) userEl.textContent=username ? "@"+username : "";
-        if(avatar) avatar.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
+        if(userEl) userEl.textContent=username ? "@"+username : "帳號未設定";
+        if(avatarLetter) avatarLetter.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
+        else if(avatar) avatar.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
 
         refreshAccountCard();
         if(status) status.textContent="";
@@ -6535,7 +6580,6 @@ body.v40-night .account-divider{background:#374151;}
                 .filter(u => u.total > 0)
                 .sort((a,b) =>
                     b.winRate - a.winRate ||
-                    b.correct - a.correct ||
                     b.total - a.total ||
                     a.name.localeCompare(b.name, "zh-Hant")
                 );
@@ -6572,7 +6616,7 @@ body.v40-night .account-divider{background:#374151;}
                     </tbody>
                   </table>
                 </div>
-                <div style="margin-top:8px;color:#777;font-size:12px">僅計測驗模式；最多顯示 50 名。排名規則：勝率 → 答對題數 → 答題數</div>
+                <div style="margin-top:8px;color:#777;font-size:12px">僅計測驗模式；最多顯示 50 名。排名方式：正確率由高至低；正確率相同時，以答題數較多者優先。</div>
             `;
         } catch(error) {
             console.error("班排行載入失敗：",error);
@@ -6716,7 +6760,7 @@ body.v40-night .account-divider{background:#374151;}
         const rankPanel = document.createElement("div");
         rankPanel.id = "stats-ranking-panel";
         rankPanel.style.cssText = "display:none;position:relative;z-index:1;width:calc(100% - 20px);max-width:1100px;box-sizing:border-box;margin:12px auto;padding:12px;border:2px solid #f0ad4e;border-radius:14px;background:rgba(255,255,255,.94);font-size:16px;line-height:1.55;";
-        rankPanel.innerHTML = `<div id="stats-ranking" style="font-weight:bold;margin-bottom:7px;font-size:18px">🏆 班排行</div><div style="margin-bottom:7px;font-size:13px;color:#666">僅計測驗模式作答；顯示前 50 名。</div><div id="user-answer-ranking-list" style="color:#777">載入中...</div>`;
+        rankPanel.innerHTML = `<div id="stats-ranking" style="font-weight:bold;margin-bottom:7px;font-size:18px">🏆 班排行</div><div style="margin-bottom:7px;font-size:13px;color:#666">僅計測驗模式作答；顯示前 50 名。正確率相同時，以答題數較多者優先。</div><div id="user-answer-ranking-list" style="color:#777">載入中...</div>`;
         document.getElementById("container").appendChild(rankPanel);
         loadUserAnswerRanking(document.getElementById("user-answer-ranking-list"));
     
