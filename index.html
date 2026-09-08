@@ -6637,70 +6637,31 @@ document.addEventListener("DOMContentLoaded",()=>{
     // 使用者答題排行：從 Supabase quiz_stats 取得跨使用者資料
     async function loadUserAnswerRanking(target) {
         if (!target) return;
-        target.innerHTML = '<div style="padding:10px;color:#777">載入線上排名中...</div>';
+        target.innerHTML = '<div style="padding:10px;color:#777">載入班排名中...</div>';
+
         try {
-            const { data: rows, error } = await supabaseClient
-                .from("question_stats")
-                .select("user_id,attempts,correct,wrong");
-            if (error) throw error;
+            // 優先使用 Supabase RPC：由資料庫安全彙整所有使用者，
+            // 不受每位使用者只能讀自己 question_stats / profiles 的 RLS 影響。
+            const { data: rpcRows, error: rpcError } =
+                await supabaseClient.rpc("get_class_ranking");
 
-            const users = new Map();
-            (rows || []).forEach(row => {
-                const userId = String(row.user_id || "").trim();
-                if (!userId) return;
-                if (!users.has(userId)) {
-                    users.set(userId, { userId, name:"使用者", username:"", total:0, correct:0, wrong:0 });
-                }
-                const u = users.get(userId);
-                u.total += Math.max(0, Number(row.attempts) || 0);
-                u.correct += Math.max(0, Number(row.correct) || 0);
-                u.wrong += Math.max(0, Number(row.wrong) || 0);
-            });
+            if (rpcError) throw rpcError;
 
-            if (!users.size) {
-                target.innerHTML = '<div style="color:#888">目前還沒有線上答題資料</div>';
-                return;
-            }
-
-            // 讀取 profiles，將 user_id 對應成使用者名稱。
-            const ids = Array.from(users.keys());
-            try {
-                const { data: profiles, error: profileError } = await supabaseClient
-                    .from("profiles")
-                    .select("id,name,username")
-                    .in("id", ids);
-                if (!profileError && Array.isArray(profiles)) {
-                    profiles.forEach(p => {
-                        const u = users.get(String(p.id || ""));
-                        if (u) {
-                            u.name = String(p.name || p.username || "使用者").trim() || "使用者";
-                            u.username = String(p.username || "").trim();
-                        }
-                    });
-                }
-            } catch (profileError) {
-                console.warn("排行榜名稱載入失敗，改以使用者代號顯示", profileError);
-            }
-
-            const ranking = Array.from(users.values())
-                .map(u => {
-                    // 以正確率作為勝率；資料不一致時用總數重新校正。
-                    const total = Math.max(u.total, u.correct + u.wrong);
-                    const correct = Math.min(Math.max(0, u.correct), total);
-                    const wrong = Math.max(0, total - correct);
-                    const winRate = total > 0 ? correct / total * 100 : 0;
-                    return { ...u, total, correct, wrong, winRate };
-                })
-                .filter(u => u.total > 0)
-                .sort((a,b) =>
-                    b.winRate - a.winRate ||
-                    b.correct - a.correct ||
-                    b.total - a.total ||
-                    a.name.localeCompare(b.name, "zh-Hant")
-                );
+            const ranking = (rpcRows || [])
+                .map((u, i) => ({
+                    rank: Number(u.rank_no) || (i + 1),
+                    user_id: String(u.user_id || ""),
+                    name: String(u.name || u.username || "使用者").trim() || "使用者",
+                    username: String(u.username || "").trim(),
+                    total: Math.max(0, Number(u.total_attempts) || 0),
+                    correct: Math.max(0, Number(u.correct_answers) || 0),
+                    wrong: Math.max(0, Number(u.wrong_answers) || 0),
+                    winRate: Number(u.accuracy) || 0
+                }))
+                .filter(u => u.total > 0);
 
             if (!ranking.length) {
-                target.innerHTML = '<div style="color:#888">目前還沒有可排名的答題資料</div>';
+                target.innerHTML = '<div style="color:#888">目前還沒有線上答題資料</div>';
                 return;
             }
 
@@ -6714,13 +6675,13 @@ document.addEventListener("DOMContentLoaded",()=>{
                         <th style="padding:9px">總數</th>
                         <th style="padding:9px">答對</th>
                         <th style="padding:9px">答錯</th>
-                        <th style="padding:9px">勝率</th>
+                        <th style="padding:9px">正確率</th>
                       </tr>
                     </thead>
                     <tbody>
-                      ${ranking.map((u,i)=>`
+                      ${ranking.map(u=>`
                         <tr>
-                          <td style="padding:9px;font-weight:900">${i+1}</td>
+                          <td style="padding:9px;font-weight:900">${u.rank}</td>
                           <td style="padding:9px;text-align:left;font-weight:800">${escapeHtml(u.name)}</td>
                           <td style="padding:9px">${u.total}</td>
                           <td style="padding:9px;color:#2e7d32;font-weight:800">${u.correct}</td>
@@ -6731,11 +6692,12 @@ document.addEventListener("DOMContentLoaded",()=>{
                     </tbody>
                   </table>
                 </div>
-                <div style="margin-top:8px;color:#777;font-size:12px">排名規則：勝率 → 答對題數 → 總作答數</div>
+                <div style="margin-top:8px;color:#777;font-size:12px">排名規則：正確率由高至低；相同時答題數較多者優先</div>
             `;
         } catch(error) {
-            console.error("使用者答題排行載入失敗：",error);
-            target.innerHTML='<div style="color:#b42318">目前無法讀取線上排名，請確認 Supabase 的 question_stats / profiles 權限設定。</div>';
+            console.error("班排名載入失敗：",error);
+            target.innerHTML =
+                '<div style="color:#b42318;line-height:1.6">目前無法讀取班排名。請先在 Supabase SQL Editor 建立 <b>get_class_ranking()</b> RPC。</div>';
         }
     }
 
