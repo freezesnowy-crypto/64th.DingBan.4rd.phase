@@ -186,19 +186,22 @@ async function refreshUserProfile() {
 
   if (error) {
     console.warn("讀取 profiles 失敗：", error);
-    return null;
   }
 
+  const safeProfile = profile || {};
+  const fallbackName = String(user.user_metadata?.name || user.user_metadata?.full_name || "").trim();
+  const fallbackUsername = String(user.user_metadata?.username || "").trim();
+
   const panel = document.getElementById("loginPanel");
-  if (panel && profile) {
+  if (panel) {
     panel.innerHTML = `
       <div style="font-size:20px;font-weight:bold;text-align:center">✅ 已登入</div>
-      <div style="text-align:center;margin-top:8px">${profile.name || ""}</div>
-      <div style="text-align:center;margin-top:4px;font-size:14px;color:#666">帳號：${profile.username || ""}</div>
+      <div style="text-align:center;margin-top:8px">${safeProfile.name || fallbackName || safeProfile.username || fallbackUsername || ""}</div>
+      <div style="text-align:center;margin-top:4px;font-size:14px;color:#666">帳號：${safeProfile.username || fallbackUsername || ""}</div>
       <button type="button" onclick="logoutUser()" style="display:block;margin:12px auto 0;padding:9px 18px;cursor:pointer">登出</button>
     `;
   }
-  return profile;
+  return profile || safeProfile;
 }
 
 async function logoutUser() {
@@ -3748,7 +3751,7 @@ body.v40-night .site-menu-settings-note{color:#cbd5e1;}
   font-family:"Microsoft JhengHei",system-ui,sans-serif;
   display:none;
 }
-body.supabase-authenticated .site-menu{display:block;}
+body .site-menu{display:block;}
 .site-menu-toggle{
   width:46px;height:46px;margin:0;padding:0!important;
   border:1px solid rgba(0,0,0,.12);border-radius:12px;
@@ -4078,16 +4081,130 @@ body.supabase-authenticated #container{
 .menu-account-settings .account-divider{margin:10px 0;}
 </style>
 
-<style id="final-green-purple-theme">
-body.v40-day,body:not(.v40-night){background:#DCE8DE!important;color:#26332A!important}
-body.v40-day .left,body:not(.v40-night) .left,body.v40-day #container table,body:not(.v40-night) #container table{background:#C9D8CB!important;color:#26332A!important;border-color:#AFC0B1!important}
-body.v40-day #container th,body:not(.v40-night) #container th,body.v40-day .home-subject-row,body:not(.v40-night) .home-subject-row,body.v40-day #fullQuestionRow,body:not(.v40-night) #fullQuestionRow,body.v40-day #shuffleRow,body:not(.v40-night) #shuffleRow,body.v40-day #wrongOnlyRow,body:not(.v40-night) #wrongOnlyRow,body.v40-day .site-menu-panel,body:not(.v40-night) .site-menu-panel{background:#C9D8CB!important;color:#26332A!important}
-body.v40-day #container button,body:not(.v40-night) #container button,body.v40-day .site-menu-item,body:not(.v40-night) .site-menu-item{background:#B5C8B8!important;color:#26332A!important;border-color:#9DB1A0!important}
-body.v40-night{background:#17141C!important;color:#F0EBF5!important}
-body.v40-night .left,body.v40-night #container table,body.v40-night #container th,body.v40-night .home-subject-row,body.v40-night #fullQuestionRow,body.v40-night #shuffleRow,body.v40-night .site-menu-panel{background:#24202B!important;color:#F0EBF5!important;border-color:#453B50!important}
-body.v40-night #container button,body.v40-night .site-menu-item{background:#342D40!important;color:#F0EBF5!important;border-color:#514660!important}
-body.v40-day .incorrectRow{background:#E7B8BD!important;color:#701821!important}body.v40-night .incorrectRow{background:#5A2630!important;color:#FFD9DE!important}
-body.v40-day .correctRow{background:#B9D8C0!important;color:#184D2D!important}body.v40-night .correctRow{background:#21392D!important;color:#D7F5E2!important}
+<style id="day-green-background">
+body.v40-day,body:not(.v40-night){background:#E3EFE5!important;color:#26332A!important}
+body.v40-day #container,body:not(.v40-night) #container{background:#E3EFE5!important;color:#26332A!important}
+body.v40-day .left,body:not(.v40-night) .left,body.v40-day #container table,body:not(.v40-night) #container table{background:#D5E5D7!important;color:#26332A!important;border-color:#B8CCBA!important}
+body.v40-day #container th,body:not(.v40-night) #container th{background:#C9DDCC!important;color:#26332A!important}
+body.v40-day #container button,body:not(.v40-night) #container button{background:#BFD4C2!important;color:#26332A!important;border-color:#A5BCA8!important}
+body.v40-day .site-menu-panel,body:not(.v40-night) .site-menu-panel{background:#D5E5D7!important;color:#26332A!important}
+body.v40-day .site-menu-item,body:not(.v40-night) .site-menu-item{background:#C4D9C7!important;color:#26332A!important}
+body.v40-day .incorrectRow{background:#E9B9BF!important;color:#701821!important}
+</style>
+<style id="day-incorrect-row-red">
+body.v40-day .incorrectRow,body:not(.v40-night) .incorrectRow{
+background:#F2C4C8!important;color:#741B24!important;border-color:#D98D96!important}
+body.v40-day .incorrectRow *,body:not(.v40-night) .incorrectRow *{
+color:#741B24!important;border-color:#D98D96!important}
+</style>
+<style id="night-incorrect-row-red">
+body.v40-night .incorrectRow{
+  background:#5A2630!important;
+  color:#FFDDE1!important;
+  border-color:#8E4A55!important;
+}
+body.v40-night .incorrectRow *{
+  color:#FFDDE1!important;
+  border-color:#8E4A55!important;
+}
+</style>
+<style id="night-incorrect-text-red">
+body.v40-night .incorrectRow,
+body.v40-night .incorrectRow *{
+  color:#FF9CA7!important;
+}
+body.v40-night .incorrectRow a{
+  color:#FF9CA7!important;
+}
+</style>
+<style id="incorrect-row-x-mark">
+.incorrectRow::before{content:none!important;}
+.incorrectRow > td:first-child::before{
+  content:"✕";
+  display:inline;
+  margin-right:5px;
+  font-weight:900;
+}
+body.v40-day .incorrectRow > td:first-child::before{
+  color:#B4232F!important;
+}
+body.v40-night .incorrectRow > td:first-child::before{
+  color:#FF6B78!important;
+}
+</style>
+<style id="public-settings-controls">
+.site-setting-choice{
+  border:1px solid #a5bca8;
+  background:#bfd4c2;
+  color:#26332a;
+  border-radius:9px;
+  padding:7px 11px;
+  cursor:pointer;
+  font-weight:700;
+}
+.site-setting-choice:hover{filter:brightness(.97);}
+body.v40-night .site-setting-choice{
+  background:#342d40;
+  color:#f0ebf5;
+  border-color:#5d526b;
+}
+body.font-small #container,
+body.font-small #container *{font-size:90%!important;}
+body.font-normal #container,
+body.font-normal #container *{font-size:100%!important;}
+body.font-large #container,
+body.font-large #container *{font-size:115%!important;}
+body.font-small .site-menu,
+body.font-small .site-menu *,
+body.font-normal .site-menu,
+body.font-normal .site-menu *,
+body.font-large .site-menu,
+body.font-large .site-menu *{font-size:inherit;}
+
+</style>
+<style id="font-size-visual-fix">
+body.font-small #container .question-text{font-size:17px!important;}
+body.font-normal #container .question-text{font-size:19px!important;}
+body.font-large #container .question-text{font-size:22px!important;}
+body.font-small #container .option{font-size:15px!important;}
+body.font-normal #container .option{font-size:17px!important;}
+body.font-large #container .option{font-size:19px!important;}
+body.font-small #container button{font-size:13px!important;}
+body.font-normal #container button{font-size:15px!important;}
+body.font-large #container button{font-size:17px!important;}
+</style>
+<style id="public-background-color-final">
+:root{--user-page-bg:#E3EFE5;}
+html.user-custom-bg,
+body.user-custom-bg{
+  background-color:var(--user-page-bg)!important;
+}
+body.user-custom-bg #container{
+  background-color:var(--user-page-bg)!important;
+}
+body.user-custom-bg #container > div:not(.site-menu):not(.marquee-container),
+body.user-custom-bg #container > section,
+body.user-custom-bg #container > main{
+  background-color:var(--user-page-bg)!important;
+}
+body.user-custom-bg .public-background-setting{
+  background:transparent!important;
+}
+.bg-color-picker-wrap{
+  display:inline-flex!important;align-items:center!important;gap:6px!important;
+  padding:6px 9px!important;border:1px solid #a5bca8!important;border-radius:9px!important;
+  background:#bfd4c2!important;color:#26332a!important;cursor:pointer!important;
+}
+.bg-color-picker-wrap input{
+  width:28px!important;height:28px!important;padding:0!important;border:0!important;
+  background:transparent!important;cursor:pointer!important;
+}
+body.v40-night .bg-color-picker-wrap{
+  background:#342d40!important;color:#f0ebf5!important;border-color:#5d526b!important;
+}
+.site-setting-choice.bg-preset{
+  cursor:pointer!important;
+}
 </style>
 </head>
 <style>
@@ -4207,8 +4324,20 @@ body.v40-day .correctRow{background:#B9D8C0!important;color:#184D2D!important}bo
 <body>
 <style id="supabase-login-gate-css">
 /* 未登入：只顯示登入畫面；登入成功後才顯示首頁內容 */
-body:not(.supabase-authenticated) > :not(#loginPanel):not(script):not(style) {
+body:not(.supabase-authenticated) > :not(#loginPanel):not(#siteMenu):not(script):not(style) {
   display: none !important;
+}
+/* 未登入時，功能表仍可使用，但只公開「設定」 */
+body:not(.supabase-authenticated) #siteMenu .site-menu-user,
+body:not(.supabase-authenticated) #siteMenu .site-menu-item:not(#menuSettingsBtn),
+body:not(.supabase-authenticated) #siteMenu #menuAccountPanel,
+body:not(.supabase-authenticated) #siteMenu #menuSubjectsPanel,
+body:not(.supabase-authenticated) #siteMenu #menuRiskPanel,
+body:not(.supabase-authenticated) #siteMenu #menuRankPanel {
+  display: none !important;
+}
+body:not(.supabase-authenticated) #siteMenu #menuSettingsBtn {
+  display: block !important;
 }
 body.supabase-authenticated #loginPanel {
   display: none !important;
@@ -4265,9 +4394,37 @@ body.supabase-authenticated #loginPanel {
     <button type="button" class="site-menu-item site-menu-logout" id="menuLogoutBtn">🔐 登入／登出</button>
     <div id="menuSettingsPanel" class="site-menu-settings" hidden>
       <div class="site-menu-settings-title">⚙️ 設定</div>
-      <div class="site-menu-settings-row">網站版本：4.0V</div>
-      <div class="site-menu-settings-row">📅 第四階段測驗：2026/11/07</div>
-      <div class="site-menu-settings-note">日／夜模式可由功能表切換；測驗紀錄維持原有儲存方式。</div>
+
+      <div class="site-menu-settings-row">
+        <strong>字體大小</strong>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:7px">
+          <button type="button" class="site-setting-choice" id="fontSmallBtn">A 小</button>
+          <button type="button" class="site-setting-choice" id="fontNormalBtn">A 中</button>
+          <button type="button" class="site-setting-choice" id="fontLargeBtn">A 大</button>
+        </div>
+      </div>
+
+      <div class="site-menu-settings-row public-background-setting">
+        <strong>背景顏色</strong>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px">
+          <label class="bg-color-picker-wrap">
+            <input id="backgroundColorPicker" type="color" value="#E3EFE5" aria-label="選擇背景顏色">
+            <span>🎨 自選</span>
+          </label>
+          <button type="button" class="site-setting-choice bg-preset" data-bg="#E3EFE5">淡綠</button>
+          <button type="button" class="site-setting-choice bg-preset" data-bg="#E5EEF5">淡藍</button>
+          <button type="button" class="site-setting-choice bg-preset" data-bg="#F3EDE2">米白</button>
+          <button type="button" class="site-setting-choice bg-preset" data-bg="#EEE8F4">淡紫</button>
+          <button type="button" class="site-setting-choice" id="backgroundResetBtn">恢復預設</button>
+        </div>
+      </div>
+
+      <div class="site-menu-settings-row">
+        <strong>網站資訊</strong>
+        <div style="margin-top:5px">4.0V　｜　第四階段測驗：2026/11/07</div>
+      </div>
+
+      <div class="site-menu-settings-note">以上為公用設定，不需登入；設定只影響目前瀏覽器。</div>
     </div>
 
     <div id="menuAccountPanel" class="site-menu-settings menu-account-settings" hidden>
@@ -4276,7 +4433,7 @@ body.supabase-authenticated #loginPanel {
         <div class="account-profile-main">
           <div class="account-profile-eyebrow">個人資料</div>
           <div id="accountDisplayName" class="account-profile-name">使用者</div>
-          <div id="accountDisplayUsername" class="account-profile-username">登入中…</div>
+          <div id="accountDisplayUsername" class="account-profile-username">@username</div>
         </div>
       </div>
 
@@ -5628,19 +5785,23 @@ body.v40-night .account-divider{background:#374151;}
           .from("profiles").select("id,name,username").eq("id",user.id).maybeSingle();
         if(error) throw error;
 
-        const authUsername = String(user.user_metadata?.username || "").trim();
-        const profileUsername = String(profile?.username || "").trim();
-        const loginId = String(user.id || "").trim();
-        const username = profileUsername || authUsername || loginId;
-        const displayName = String(profile?.name || "").trim() || profileUsername || authUsername || "使用者";
-        nameInput.value=profile?.name || "";
+        const profileName=String(profile?.name || "").trim();
+        const profileUsername=String(profile?.username || "").trim();
+        const authName=String(user.user_metadata?.name || user.user_metadata?.full_name || "").trim();
+        const authUsername=String(user.user_metadata?.username || "").trim();
+
+        // 顯示名稱優先使用 profiles.name；若尚未建立資料，依序使用 Auth 名稱、username。
+        const displayName=profileName || authName || profileUsername || authUsername || "使用者";
+        const username=profileUsername || authUsername;
+
+        nameInput.value=profileName || authName || "";
         usernameInput.value=username;
 
         const nameEl=document.getElementById("accountDisplayName");
         const userEl=document.getElementById("accountDisplayUsername");
         const avatar=document.getElementById("accountAvatar");
         if(nameEl) nameEl.textContent=displayName;
-        if(userEl) userEl.textContent=username ? "@"+username : "@"+loginId;
+        if(userEl) userEl.textContent=username ? "@"+username : "";
         if(avatar) avatar.textContent=(String(displayName).trim().charAt(0)||"U").toUpperCase();
 
         refreshAccountCard();
@@ -5862,6 +6023,117 @@ body.v40-night .account-divider{background:#374151;}
 })();
 </script>
 
+<script id="public-settings-controls-js">
+(()=>{
+  const storageKey="publicSiteFontSize";
+  function setFontSize(size){
+    document.body.classList.remove("font-small","font-normal","font-large");
+    document.body.classList.add("font-"+size);
+    localStorage.setItem(storageKey,size);
+  }
+document.addEventListener("DOMContentLoaded",()=>{
+    const savedFont=localStorage.getItem(storageKey);
+    if(savedFont && ["small","normal","large"].includes(savedFont)) setFontSize(savedFont);
+
+    document.getElementById("fontSmallBtn")?.addEventListener("click",()=>setFontSize("small"));
+    document.getElementById("fontNormalBtn")?.addEventListener("click",()=>setFontSize("normal"));
+    document.getElementById("fontLargeBtn")?.addEventListener("click",()=>setFontSize("large"));
+  });
+})();
+</script>
+<script id="font-size-active-state">
+(()=>{
+  const ids={small:"fontSmallBtn",normal:"fontNormalBtn",large:"fontLargeBtn"};
+  function refreshFontButtons(){
+    const size=document.body.classList.contains("font-large")?"large":
+               document.body.classList.contains("font-small")?"small":"normal";
+    Object.entries(ids).forEach(([key,id])=>{
+      const el=document.getElementById(id);
+      if(el) el.setAttribute("aria-pressed", key===size ? "true" : "false");
+    });
+  }
+  document.addEventListener("click",e=>{
+    if(e.target?.id==="fontSmallBtn"||e.target?.id==="fontNormalBtn"||e.target?.id==="fontLargeBtn"){
+      setTimeout(refreshFontButtons,0);
+    }
+  });
+  document.addEventListener("DOMContentLoaded",refreshFontButtons);
+})();
+</script>
+<script id="public-background-color-final-js">
+(()=>{
+  const STORAGE_KEY="publicBackgroundColor";
+  const DEFAULT="#E3EFE5";
+
+  function normalizeColor(value){
+    const c=String(value||"").trim();
+    return /^#[0-9a-fA-F]{6}$/.test(c) ? c : DEFAULT;
+  }
+
+  function applyBackground(value,save=true){
+    const c=normalizeColor(value);
+    document.documentElement.classList.add("user-custom-bg");
+    document.body.classList.add("user-custom-bg");
+    document.documentElement.style.setProperty("--user-page-bg",c);
+    document.body.style.setProperty("--user-page-bg",c);
+    document.documentElement.style.setProperty("background-color",c,"important");
+    document.body.style.setProperty("background-color",c,"important");
+
+    // 直接套用到主要頁面容器，確保畫面立刻可見。
+    ["#container"].forEach(sel=>{
+      document.querySelectorAll(sel).forEach(el=>{
+        el.style.setProperty("background-color",c,"important");
+      });
+    });
+
+    const picker=document.getElementById("backgroundColorPicker");
+    if(picker) picker.value=c;
+    if(save) localStorage.setItem(STORAGE_KEY,c);
+  }
+
+  function resetBackground(){
+    localStorage.removeItem(STORAGE_KEY);
+    applyBackground(DEFAULT,false);
+  }
+
+  function bind(){
+    document.addEventListener("input",e=>{
+      if(e.target && e.target.id==="backgroundColorPicker"){
+        applyBackground(e.target.value,true);
+      }
+    });
+
+    document.addEventListener("change",e=>{
+      if(e.target && e.target.id==="backgroundColorPicker"){
+        applyBackground(e.target.value,true);
+      }
+    });
+
+    document.addEventListener("click",e=>{
+      const preset=e.target.closest(".bg-preset");
+      if(preset){
+        e.preventDefault();
+        e.stopPropagation();
+        applyBackground(preset.dataset.bg,true);
+        return;
+      }
+      if(e.target.closest("#backgroundResetBtn")){
+        e.preventDefault();
+        e.stopPropagation();
+        resetBackground();
+      }
+    });
+
+    applyBackground(localStorage.getItem(STORAGE_KEY)||DEFAULT,false);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",bind,{once:true});
+  }else{
+    bind();
+  }
+})();
+</script>
 </body>
 <script>
     //globol settings
