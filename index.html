@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>64th丁 第四階段測驗 4.0V</title>
+<title>64th丁 第四階段測驗</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -4206,6 +4206,1288 @@ body.v40-night .bg-color-picker-wrap{
   cursor:pointer!important;
 }
 </style>
+
+<style id="no-login-original-layout-fix">
+/* 免登入：解除原本的「未登入整頁隱藏」CSS，但完整保留原首頁 DOM。 */
+body.no-login-direct > :not(#loginPanel):not(script):not(style) {
+  display:revert !important;
+  visibility:visible !important;
+}
+body.no-login-direct #loginPanel {
+  display:none !important;
+}
+body.no-login-direct #siteMenu,
+body.no-login-direct #online-count,
+body.no-login-direct .marquee-container,
+body.no-login-direct #header,
+body.no-login-direct #v40-home-exam-countdown,
+body.no-login-direct #container {
+  visibility:visible !important;
+}
+body.no-login-direct #container {
+  display:block !important;
+}
+</style>
+<script id="no-login-original-layout-init">
+(function(){
+  function applyNoLogin(){
+    document.body.classList.add("no-login-direct");
+    // 讓原本只在登入後執行的頁面初始化條件視為已通過，
+    // 但不建立任何帳號，也不需要輸入帳號密碼。
+    document.body.classList.add("supabase-authenticated");
+    var login=document.getElementById("loginPanel");
+    if(login) login.style.display="none";
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",applyNoLogin,{once:true});
+  }else{
+    applyNoLogin();
+  }
+})();
+</script>
+
+
+<style id="remove-personal-profile-final">
+/* 功能表：完整取消「個人資料」功能 */
+#menuAccountBtn,
+#menuProfileBtn,
+#personalProfileMenuBtn,
+#accountMenuBtn,
+#accountProfileBtn,
+#menuAccountPanel,
+#menuProfilePanel,
+#personalProfilePanel,
+#accountPanel,
+#accountProfilePanel{
+  display:none !important;
+}
+</style>
+
+
+<style id="remove-account-logout-final">
+/* 免登入模式：連「登出此帳號」也取消 */
+#accountSignOutBtn,
+#menuSignOutBtn,
+#signOutBtn,
+#logoutBtn,
+#logout,
+button[onclick*="signOut"],
+button[onclick*="logout"]{
+  display:none !important;
+}
+</style>
+
+
+<style id="remove-ranking-login-siteinfo-final">
+/* 功能表精簡：取消使用者答題排行、登入／登出、網站資訊 */
+#menuRankingBtn,
+#menuUserRankingBtn,
+#userAnswerRankingBtn,
+#menuLoginBtn,
+#menuLogoutBtn,
+#menuSignOutBtn,
+#loginMenuBtn,
+#siteInfoBtn,
+#menuSiteInfoBtn,
+#websiteInfoBtn{
+  display:none !important;
+}
+</style>
+
+
+<style id="comfortable-day-night-final">
+/* ===== 舒適日夜模式：低對比、護眼配色 ===== */
+html, body{
+  background:#E8EEE9 !important;
+  color:#28312C !important;
+}
+
+/* 日間：柔和灰綠，不刺眼 */
+body.v40-day,
+body.v40-day #container,
+body.v40-day main{
+  background:#E8EEE9 !important;
+  color:#28312C !important;
+}
+body.v40-day .home-subject-row,
+body.v40-day #fullQuestionRow,
+body.v40-day #shuffleRow,
+body.v40-day #wrongOnlyRow,
+body.v40-day .stats-grid,
+body.v40-day .stats,
+body.v40-day .subject,
+body.v40-day .rule,
+body.v40-day .site-menu-panel,
+body.v40-day .site-menu-settings{
+  background:#DDE7DF !important;
+  color:#28312C !important;
+}
+
+/* 日間按鈕：降低飽和度 */
+body.v40-day button,
+body.v40-day select{
+  background:#CBD8CE !important;
+  color:#28312C !important;
+  border-color:#AEBDB2 !important;
+}
+
+/* 夜間：深灰紫，避免純黑 */
+body.v40-night,
+body.v40-night #container,
+body.v40-night main{
+  background:#211E26 !important;
+  color:#ECE8EF !important;
+}
+body.v40-night .home-subject-row,
+body.v40-night #fullQuestionRow,
+body.v40-night #shuffleRow,
+body.v40-night #wrongOnlyRow,
+body.v40-night .stats-grid,
+body.v40-night .stats,
+body.v40-night .subject,
+body.v40-night .rule,
+body.v40-night .site-menu-panel,
+body.v40-night .site-menu-settings{
+  background:#2B2731 !important;
+  color:#ECE8EF !important;
+}
+body.v40-night button,
+body.v40-night select{
+  background:#38323E !important;
+  color:#ECE8EF !important;
+  border-color:#514A59 !important;
+}
+
+/* 題目與選項：確保文字穩定可讀 */
+body.v40-day .question,
+body.v40-day .question-text,
+body.v40-day .quiz-question,
+body.v40-day label,
+body.v40-day td,
+body.v40-day th{
+  color:#28312C !important;
+}
+body.v40-night .question,
+body.v40-night .question-text,
+body.v40-night .quiz-question,
+body.v40-night label,
+body.v40-night td,
+body.v40-night th{
+  color:#ECE8EF !important;
+}
+
+/* 答錯列：維持明顯，但不使用過亮紅色 */
+body.v40-day .incorrectRow{
+  background:#F0CDD0 !important;
+  color:#7F2834 !important;
+}
+body.v40-day .incorrectRow td,
+body.v40-day .incorrectRow td *{
+  background:#F0CDD0 !important;
+  color:#7F2834 !important;
+}
+body.v40-night .incorrectRow{
+  background:#4A2930 !important;
+  color:#FFB3BB !important;
+}
+body.v40-night .incorrectRow td,
+body.v40-night .incorrectRow td *{
+  background:#4A2930 !important;
+  color:#FFB3BB !important;
+}
+
+/* 錯題 X */
+.incorrectRow::before{content:none!important;}
+.incorrectRow > td:first-child::before{
+  content:"✕";
+  display:inline;
+  margin-right:5px;
+  font-weight:900;
+}
+body.v40-day .incorrectRow > td:first-child::before{color:#B4232F!important;}
+body.v40-night .incorrectRow > td:first-child::before{color:#FF7D88!important;}
+</style>
+
+
+<style id="quiz-navigation-position-fix">
+/* ===== 測驗中固定快捷列：不再跟著內容亂跑 ===== */
+
+/* 頂端／底端按鈕：固定在視窗左右安全位置 */
+#scrollTopBtn,
+#scrollBottomBtn,
+.scroll-top-btn,
+.scroll-bottom-btn,
+button[aria-label*="頂端"],
+button[aria-label*="底端"]{
+  position:fixed !important;
+  right:16px !important;
+  z-index:10050 !important;
+}
+#scrollTopBtn,
+.scroll-top-btn,
+button[aria-label*="頂端"]{
+  bottom:64px !important;
+}
+#scrollBottomBtn,
+.scroll-bottom-btn,
+button[aria-label*="底端"]{
+  bottom:16px !important;
+}
+
+/* 測驗中的單選／複選快捷按鈕保持在同一個固定區域 */
+#singleChoiceQuickBtn,
+#multipleChoiceQuickBtn,
+#singleChoiceBtn,
+#multipleChoiceBtn,
+.single-choice-quick-btn,
+.multiple-choice-quick-btn{
+  position:fixed !important;
+  left:auto !important;
+  right:16px !important;
+  z-index:10049 !important;
+}
+#singleChoiceQuickBtn,
+#singleChoiceBtn,
+.single-choice-quick-btn{
+  bottom:116px !important;
+}
+#multipleChoiceQuickBtn,
+#multipleChoiceBtn,
+.multiple-choice-quick-btn{
+  bottom:164px !important;
+}
+
+/* 若原本快捷列有 wrapper，固定 wrapper 而不讓內容重排 */
+.quiz-floating-tools,
+.question-floating-tools,
+.quiz-shortcuts,
+#quizFloatingTools{
+  position:fixed !important;
+  right:16px !important;
+  bottom:16px !important;
+  z-index:10040 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:8px !important;
+}
+
+/* 手機版避免按鈕跑到畫面外 */
+@media (max-width:700px){
+  #scrollTopBtn,
+  #scrollBottomBtn,
+  .scroll-top-btn,
+  .scroll-bottom-btn,
+  #singleChoiceQuickBtn,
+  #multipleChoiceQuickBtn,
+  #singleChoiceBtn,
+  #multipleChoiceBtn,
+  .single-choice-quick-btn,
+  .multiple-choice-quick-btn{
+    right:10px !important;
+    max-width:calc(100vw - 20px) !important;
+  }
+}
+
+/* ===== 夜間背景：自選科目不得覆蓋整體夜間底色 ===== */
+/* body 才是夜間主背景；自選科目區塊只保持自身區塊色 */
+body.v40-night{
+  background:#211E26 !important;
+}
+body.v40-night #container,
+body.v40-night main,
+body.v40-night .page,
+body.v40-night .content,
+body.v40-night .quiz-page{
+  background-color:#211E26 !important;
+}
+
+/* 自選科目只限於自己的元件，不可把整頁夜間背景帶走 */
+body.v40-night #selectedSubjectTest,
+body.v40-night #selectedSubjectTestPanel,
+body.v40-night #selectedSubjectPanel,
+body.v40-night .selected-subject,
+body.v40-night .selected-subject-panel{
+  background-color:#2B2731 !important;
+}
+
+/* 避免自選科目內的白色/日間預設背景滲透到外層 */
+body.v40-night #selectedSubjectTestButton,
+body.v40-night #selectedSubjectTest select,
+body.v40-night #selectedSubjectTest input{
+  background-color:#38323E !important;
+  color:#ECE8EF !important;
+}
+
+/* 不讓 table / section 的透明背景造成視覺上像被自選科目染色 */
+body.v40-night table,
+body.v40-night section,
+body.v40-night .section,
+body.v40-night .quiz-section{
+  background-color:transparent;
+}
+</style>
+
+
+<style id="quiz-position-final-override">
+/* ===== 修正按鈕位置：普通單選／複選按鈕恢復原本排版 ===== */
+
+/* 先解除上一版可能套到普通按鈕的 fixed */
+#singleChoiceQuickBtn,
+#multipleChoiceQuickBtn,
+#singleChoiceBtn,
+#multipleChoiceBtn,
+.single-choice-quick-btn,
+.multiple-choice-quick-btn{
+  position:static !important;
+  left:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  top:auto !important;
+  z-index:auto !important;
+}
+
+/* 只固定頂端／底端 */
+#scrollTopBtn,
+#scrollBottomBtn,
+.scroll-top-btn,
+.scroll-bottom-btn{
+  position:fixed !important;
+  right:16px !important;
+  left:auto !important;
+  z-index:10050 !important;
+}
+#scrollTopBtn,
+.scroll-top-btn{ bottom:64px !important; }
+#scrollBottomBtn,
+.scroll-bottom-btn{ bottom:16px !important; }
+
+/* 保留原本 inline padding / background / 字色，避免位置與外觀一起被改掉 */
+button[style*="padding: 10px 14px"][style*="background-color: #007bff"],
+button[style*="background-color: rgb(23, 162, 184)"]{
+  position:static !important;
+  left:auto !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  z-index:auto !important;
+  margin-left:initial !important;
+  margin-right:initial !important;
+}
+
+/* 如果這些普通按鈕在同一列，維持正常 inline/block 流程，不用 fixed */
+.quiz-actions button,
+.question-actions button,
+.choice-actions button{
+  transform:none !important;
+}
+</style>
+
+
+<style id="default-background-day-night-contrast">
+/* ===== 恢復預設背景＋日夜模式字體高對比 ===== */
+
+/* 日間：恢復較接近原預設的明亮背景 */
+body.v40-day,
+body.v40-day #container,
+body.v40-day main{
+  background-color:#F5F7F6 !important;
+  color:#222222 !important;
+}
+
+/* 日間區塊 */
+body.v40-day .home-subject-row,
+body.v40-day #fullQuestionRow,
+body.v40-day #shuffleRow,
+body.v40-day #wrongOnlyRow,
+body.v40-day .stats-grid,
+body.v40-day .stats,
+body.v40-day .subject,
+body.v40-day .rule{
+  background-color:#FFFFFF !important;
+  color:#222222 !important;
+}
+
+/* 日間一般文字 */
+body.v40-day,
+body.v40-day p,
+body.v40-day span,
+body.v40-day div,
+body.v40-day label,
+body.v40-day td,
+body.v40-day th,
+body.v40-day .question,
+body.v40-day .question-text,
+body.v40-day .quiz-question,
+body.v40-day .option,
+body.v40-day .choice{
+  color:#222222 !important;
+}
+
+/* 夜間：恢復深色背景，文字使用明亮高對比 */
+body.v40-night,
+body.v40-night #container,
+body.v40-night main{
+  background-color:#17141C !important;
+  color:#F5F2F7 !important;
+}
+
+/* 夜間區塊 */
+body.v40-night .home-subject-row,
+body.v40-night #fullQuestionRow,
+body.v40-night #shuffleRow,
+body.v40-night #wrongOnlyRow,
+body.v40-night .stats-grid,
+body.v40-night .stats,
+body.v40-night .subject,
+body.v40-night .rule{
+  background-color:#24202B !important;
+  color:#F5F2F7 !important;
+}
+
+/* 夜間一般文字 */
+body.v40-night,
+body.v40-night p,
+body.v40-night span,
+body.v40-night div,
+body.v40-night label,
+body.v40-night td,
+body.v40-night th,
+body.v40-night .question,
+body.v40-night .question-text,
+body.v40-night .quiz-question,
+body.v40-night .option,
+body.v40-night .choice{
+  color:#F5F2F7 !important;
+}
+
+/* 輸入框／選單也保持對比 */
+body.v40-day input,
+body.v40-day select,
+body.v40-day textarea{
+  background:#FFFFFF !important;
+  color:#222222 !important;
+}
+body.v40-night input,
+body.v40-night select,
+body.v40-night textarea{
+  background:#2B2731 !important;
+  color:#F5F2F7 !important;
+}
+
+/* 錯題維持清楚的紅色對比 */
+body.v40-day .incorrectRow,
+body.v40-day .incorrectRow td,
+body.v40-day .incorrectRow td *{
+  background:#F2C4C8 !important;
+  color:#8A1F2B !important;
+}
+body.v40-night .incorrectRow,
+body.v40-night .incorrectRow td,
+body.v40-night .incorrectRow td *{
+  background:#4B252D !important;
+  color:#FF9FAA !important;
+}
+
+/* X */
+.incorrectRow::before{content:none!important;}
+.incorrectRow > td:first-child::before{
+  content:"✕";
+  display:inline;
+  margin-right:5px;
+  font-weight:900;
+}
+body.v40-day .incorrectRow > td:first-child::before{color:#B4232F!important;}
+body.v40-night .incorrectRow > td:first-child::before{color:#FF6B78!important;}
+</style>
+
+
+<style id="quiz-bottom-bar-final-reset">
+/* ===== 測驗快捷列：固定在網頁視窗最下排 ===== */
+#quizBottomQuickBar{
+  position:fixed !important;
+  left:50% !important;
+  bottom:max(10px, env(safe-area-inset-bottom)) !important;
+  transform:translateX(-50%) !important;
+  width:auto !important;
+  max-width:calc(100vw - 20px) !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:8px !important;
+  padding:8px !important;
+  margin:0 !important;
+  z-index:10060 !important;
+  box-sizing:border-box !important;
+  white-space:nowrap !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  background:rgba(245,247,246,.96) !important;
+  border:1px solid #D3DAD5 !important;
+  border-radius:12px !important;
+  box-shadow:0 3px 12px rgba(0,0,0,.18) !important;
+}
+
+#quizBottomQuickBar button{
+  position:static !important;
+  left:auto !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  flex:0 0 auto !important;
+  margin:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-height:42px !important;
+  padding:10px 14px !important;
+  border:none !important;
+  border-radius:8px !important;
+  cursor:pointer !important;
+  font-weight:bold !important;
+  color:#fff !important;
+}
+
+#quizBottomQuickBar #quizQuickTop,
+#quizBottomQuickBar #quizQuickBottom{
+  background:#007bff !important;
+}
+
+#quizBottomQuickBar #btn-single,
+#quizBottomQuickBar #btn-multiple{
+  background:#17a2b8 !important;
+}
+
+body.v40-night #quizBottomQuickBar{
+  background:rgba(36,32,43,.97) !important;
+  border-color:#514A59 !important;
+}
+body.v40-night #quizBottomQuickBar #quizQuickTop,
+body.v40-night #quizBottomQuickBar #quizQuickBottom{
+  background:#3B82F6 !important;
+}
+body.v40-night #quizBottomQuickBar #btn-single,
+body.v40-night #quizBottomQuickBar #btn-multiple{
+  background:#159BB2 !important;
+}
+
+@media (max-width:700px){
+  #quizBottomQuickBar{
+    width:calc(100vw - 12px) !important;
+    max-width:calc(100vw - 12px) !important;
+    bottom:max(6px, env(safe-area-inset-bottom)) !important;
+    gap:5px !important;
+    padding:6px !important;
+    border-radius:10px !important;
+  }
+  #quizBottomQuickBar button{
+    min-height:40px !important;
+    padding:9px 10px !important;
+    font-size:15px !important;
+  }
+}
+</style>
+
+
+<style id="quiz-bottom-fixed-final-v2">
+/* ===== 測驗／刷題快捷列：只認這一組 ===== */
+html body > #quizBottomQuickBar{
+  position:fixed !important;
+  left:50% !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:0 !important;
+  transform:translate3d(-50%,0,0) !important;
+
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  width:auto !important;
+  max-width:calc(100vw - 8px) !important;
+  min-width:0 !important;
+  height:auto !important;
+  box-sizing:border-box !important;
+
+  margin:0 !important;
+  padding:7px 10px !important;
+  gap:8px !important;
+
+  z-index:2147483647 !important;
+  background:rgba(255,255,255,.97) !important;
+  border:1px solid #d6d6d6 !important;
+  border-bottom:0 !important;
+  border-radius:10px 10px 0 0 !important;
+  box-shadow:0 -2px 10px rgba(0,0,0,.16) !important;
+}
+
+html body > #quizBottomQuickBar > button{
+  position:static !important;
+  inset:auto !important;
+  float:none !important;
+  top:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  left:auto !important;
+
+  display:inline-flex !important;
+  flex:0 0 auto !important;
+  width:auto !important;
+  min-width:72px !important;
+  min-height:40px !important;
+  box-sizing:border-box !important;
+
+  margin:0 !important;
+  transform:none !important;
+}
+
+html body > #quizBottomQuickBar #quizQuickTop,
+html body > #quizBottomQuickBar #quizQuickBottom{
+  background:#007bff !important;
+  color:#fff !important;
+}
+html body > #quizBottomQuickBar #btn-single,
+html body > #quizBottomQuickBar #btn-multiple{
+  background:#17a2b8 !important;
+  color:#fff !important;
+}
+
+body.v40-night #quizBottomQuickBar{
+  background:#24202B !important;
+  border-color:#514A59 !important;
+}
+
+@media(max-width:700px){
+  html body > #quizBottomQuickBar{
+    left:50% !important;
+    bottom:0 !important;
+    width:calc(100vw - 6px) !important;
+    max-width:calc(100vw - 6px) !important;
+    padding:6px 4px !important;
+    gap:5px !important;
+  }
+  html body > #quizBottomQuickBar > button{
+    min-width:0 !important;
+    flex:1 1 0 !important;
+    min-height:40px !important;
+    padding:9px 7px !important;
+    font-size:15px !important;
+  }
+}
+</style>
+
+
+<style id="night-mode-full-black-final">
+/* ===== 夜間模式：整個介面使用黑色系背景 ===== */
+body.v40-night,
+body.v40-night html{
+  background:#000000 !important;
+  color:#FFFFFF !important;
+}
+
+/* 所有主要容器／區塊同步黑底 */
+body.v40-night #container,
+body.v40-night main,
+body.v40-night header,
+body.v40-night section,
+body.v40-night article,
+body.v40-night .page,
+body.v40-night .content,
+body.v40-night .quiz-page,
+body.v40-night .home-subject-row,
+body.v40-night #fullQuestionRow,
+body.v40-night #shuffleRow,
+body.v40-night #wrongOnlyRow,
+body.v40-night .stats-grid,
+body.v40-night .stats,
+body.v40-night .subject,
+body.v40-night .rule{
+  background:#000000 !important;
+  color:#FFFFFF !important;
+}
+
+/* 表格、卡片、題目區，不要再冒出灰紫或白色 */
+body.v40-night table,
+body.v40-night tbody,
+body.v40-night thead,
+body.v40-night tr,
+body.v40-night td,
+body.v40-night th,
+body.v40-night .card,
+body.v40-night .panel,
+body.v40-night .question-card,
+body.v40-night .question,
+body.v40-night .question-text{
+  background:#000000 !important;
+  color:#FFFFFF !important;
+}
+
+/* 輸入／選單 */
+body.v40-night input,
+body.v40-night select,
+body.v40-night textarea{
+  background:#111111 !important;
+  color:#FFFFFF !important;
+  border-color:#444444 !important;
+}
+
+/* 一般文字保持高對比 */
+body.v40-night,
+body.v40-night p,
+body.v40-night span,
+body.v40-night div,
+body.v40-night label,
+body.v40-night td,
+body.v40-night th,
+body.v40-night li,
+body.v40-night a{
+  color:#FFFFFF !important;
+}
+
+/* 按鈕維持深色但看得到 */
+body.v40-night button{
+  background:#222222 !important;
+  color:#FFFFFF !important;
+  border-color:#555555 !important;
+}
+
+/* 快捷列也跟著全黑 */
+body.v40-night #quizBottomQuickBar{
+  background:#000000 !important;
+  border-color:#444444 !important;
+}
+body.v40-night #quizBottomQuickBar #quizQuickTop,
+body.v40-night #quizBottomQuickBar #quizQuickBottom{
+  background:#175CD3 !important;
+  color:#FFFFFF !important;
+}
+body.v40-night #quizBottomQuickBar #btn-single,
+body.v40-night #quizBottomQuickBar #btn-multiple{
+  background:#0E7490 !important;
+  color:#FFFFFF !important;
+}
+
+/* 答錯整列：黑紅色，仍然明顯 */
+body.v40-night .incorrectRow,
+body.v40-night .incorrectRow td,
+body.v40-night .incorrectRow td *{
+  background:#300000 !important;
+  color:#FFB3B3 !important;
+}
+
+/* 避免自選科目或其他 preset 把夜間整體背景蓋掉 */
+body.v40-night [style*="background"],
+body.v40-night [style*="background-color"]{
+  /* 不強行覆蓋按鈕等已有顏色；主要由上面的區塊選擇器控制 */
+}
+</style>
+
+
+<style id="night-home-eye-comfort-final">
+/* ===== 夜間模式首頁護眼：不是純白字刺眼，而是柔和暖白＋深黑灰 ===== */
+
+/* 整體：接近 OLED/深色閱讀的柔和黑，不讓首頁反差過大 */
+body.v40-night,
+body.v40-night #container,
+body.v40-night main{
+  background:#080808 !important;
+  color:#E7E2DC !important;
+}
+
+/* 首頁主要區塊：比純黑稍微亮一階，方便分辨區域 */
+body.v40-night .home-subject-row,
+body.v40-night #fullQuestionRow,
+body.v40-night #shuffleRow,
+body.v40-night #wrongOnlyRow,
+body.v40-night .stats-grid,
+body.v40-night .stats,
+body.v40-night .subject,
+body.v40-night .rule,
+body.v40-night .site-menu-panel,
+body.v40-night .site-menu-settings{
+  background:#141414 !important;
+  color:#E7E2DC !important;
+  border-color:#292929 !important;
+}
+
+/* 首頁標題／段落：使用柔和暖白，不用刺眼純白 */
+body.v40-night h1,
+body.v40-night h2,
+body.v40-night h3,
+body.v40-night h4,
+body.v40-night p,
+body.v40-night span,
+body.v40-night div,
+body.v40-night label,
+body.v40-night td,
+body.v40-night th,
+body.v40-night li,
+body.v40-night a{
+  color:#E7E2DC !important;
+}
+
+/* 倒數資訊：稍微突出但仍然低刺激 */
+body.v40-night #v40-home-exam-countdown{
+  color:#D9D0C8 !important;
+  background:transparent !important;
+}
+
+/* 首頁科目／刷題／測驗的選單、下拉 */
+body.v40-night .home-subject-row select,
+body.v40-night select{
+  background:#181818 !important;
+  color:#EEE9E3 !important;
+  border-color:#3A3A3A !important;
+}
+
+/* 首頁按鈕：深灰，不使用高亮白 */
+body.v40-night .home-subject-row button,
+body.v40-night #fullQuestionRow button,
+body.v40-night #shuffleRow button,
+body.v40-night #wrongOnlyRow button,
+body.v40-night button{
+  background:#222222 !important;
+  color:#EEE9E3 !important;
+  border-color:#424242 !important;
+}
+
+/* 滑過／焦點：只增加一點亮度 */
+body.v40-night button:hover,
+body.v40-night select:hover,
+body.v40-night button:focus,
+body.v40-night select:focus{
+  background:#2C2C2C !important;
+  color:#F3EEE8 !important;
+}
+
+/* 首頁統計數字與標籤 */
+body.v40-night .stat-card,
+body.v40-night .stats-summary-better .stat-card{
+  background:#141414 !important;
+  color:#E7E2DC !important;
+  border-color:#2C2C2C !important;
+}
+body.v40-night .stat-label{
+  color:#BDB6AE !important;
+}
+
+/* 跑馬燈維持深色，不讓首頁突然出現亮底 */
+body.v40-night .marquee-container{
+  background:#050505 !important;
+  color:#E7E2DC !important;
+}
+
+/* 下方快捷列：黑底＋柔和字 */
+body.v40-night #quizBottomQuickBar{
+  background:#080808 !important;
+  border-color:#303030 !important;
+  box-shadow:0 -2px 10px rgba(0,0,0,.45) !important;
+}
+</style>
+
+
+<style id="night-inline-background-override-final">
+/* 夜間模式：把首頁原本的 inline 綠色 !important 一併覆蓋 */
+body.v40-night [style*="background-color: rgb(227, 239, 229)"],
+body.v40-night [style*="background-color:rgb(227, 239, 229)"],
+body.v40-night [style*="#e3efe5"],
+body.v40-night [style*="#E3EFE5"]{
+  background-color:#141414 !important;
+  color:#E7E2DC !important;
+}
+
+/* 首頁所有直接帶背景色的主要區塊，夜間統一成深色 */
+body.v40-night #container > div,
+body.v40-night #container > section{
+  color:#E7E2DC !important;
+}
+</style>
+
+
+<style id="homepage-theme-sync-final">
+/* ===== 首頁日／夜模式：整個首頁同步，不受原本 inline 背景色影響 ===== */
+body.v40-day #container,
+body.v40-day #container > .home-subject-row,
+body.v40-day #container > #fullQuestionRow,
+body.v40-day #container > #shuffleRow,
+body.v40-day #container > #wrongOnlyRow,
+body.v40-day #container > #selectedSubjectTestPanel{
+  color:#26332A !important;
+}
+
+body.v40-night #container,
+body.v40-night #container > .home-subject-row,
+body.v40-night #container > #fullQuestionRow,
+body.v40-night #container > #shuffleRow,
+body.v40-night #container > #wrongOnlyRow,
+body.v40-night #container > #selectedSubjectTestPanel{
+  color:#F0EBF5 !important;
+}
+
+/* 下拉與自選科目面板 */
+body.v40-day #subject,
+body.v40-day #selectedSubjectTestPanel select,
+body.v40-day #selectedSubjectTestPanel input{
+  color:#26332A !important;
+}
+body.v40-night #subject,
+body.v40-night #selectedSubjectTestPanel,
+body.v40-night #selectedSubjectTestPanel select,
+body.v40-night #selectedSubjectTestPanel input{
+  color:#F0EBF5 !important;
+}
+</style>
+
+<script id="homepage-theme-sync-final-js">
+(function(){
+  function setImportant(el, prop, value){
+    if(!el) return;
+    el.style.setProperty(prop, value, "important");
+  }
+
+  function applyHomepageTheme(){
+    var night=document.body && document.body.classList.contains("v40-night");
+
+    var pageBg = night ? "#000000" : "#DCE8DE";
+    var blockBg = night ? "#111111" : "#C9D8CB";
+    var panelBg = night ? "#151515" : "#D4DFD6";
+    var inputBg = night ? "#1A1A1A" : "#FFFFFF";
+    var text = night ? "#F0EBF5" : "#26332A";
+    var border = night ? "#333333" : "#AEBDB2";
+
+    /* 整個首頁 */
+    setImportant(document.body,"background-color",pageBg);
+    setImportant(document.documentElement,"background-color",pageBg);
+    var container=document.getElementById("container");
+    setImportant(container,"background-color",pageBg);
+    setImportant(container,"color",text);
+
+    /* 首頁四個主區塊 */
+    ["fullQuestionRow","shuffleRow","wrongOnlyRow"].forEach(function(id){
+      var el=document.getElementById(id);
+      setImportant(el,"background-color",blockBg);
+      setImportant(el,"color",text);
+      setImportant(el,"border-color",border);
+    });
+
+    var subjectRow=document.querySelector("#container > .home-subject-row");
+    if(subjectRow){
+      setImportant(subjectRow,"background-color",blockBg);
+      setImportant(subjectRow,"color",text);
+      setImportant(subjectRow,"border-color",border);
+    }
+
+    /* 科目下拉選單 */
+    var subject=document.getElementById("subject");
+    setImportant(subject,"background-color",inputBg);
+    setImportant(subject,"color",text);
+    setImportant(subject,"border-color",border);
+
+    /* 自選科目 */
+    var selectedBtn=document.getElementById("selectedSubjectTestButton");
+    setImportant(selectedBtn,"color",night ? "#FFFFFF" : text);
+
+    var panel=document.getElementById("selectedSubjectTestPanel");
+    if(panel){
+      setImportant(panel,"background-color",panelBg);
+      setImportant(panel,"color",text);
+      setImportant(panel,"border-color",border);
+      panel.querySelectorAll("label,span,div").forEach(function(el){
+        setImportant(el,"color",text);
+      });
+      panel.querySelectorAll("input,select").forEach(function(el){
+        setImportant(el,"background-color",inputBg);
+        setImportant(el,"color",text);
+        setImportant(el,"border-color",border);
+      });
+    }
+
+    /* 首頁內所有主要純色綠底 inline style，跟著日／夜改 */
+    if(container){
+      container.querySelectorAll("[style]").forEach(function(el){
+        var st=(el.getAttribute("style")||"").toLowerCase();
+        if(
+          st.indexOf("background:#ccf3e2")!==-1 ||
+          st.indexOf("background-color:#ccf3e2")!==-1 ||
+          st.indexOf("rgb(227, 239, 229)")!==-1 ||
+          st.indexOf("rgb(227,239,229)")!==-1
+        ){
+          setImportant(el,"background-color",blockBg);
+          setImportant(el,"color",text);
+        }
+      });
+    }
+  }
+
+  function init(){
+    applyHomepageTheme();
+    [100,300,700,1200,2000].forEach(function(t){
+      setTimeout(applyHomepageTheme,t);
+    });
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else{
+    init();
+  }
+
+  /* 日／夜切換時即時重新套用 */
+  new MutationObserver(function(){
+    applyHomepageTheme();
+  }).observe(document.body,{attributes:true,attributeFilter:["class"],childList:true,subtree:true});
+})();
+</script>
+
+
+<style id="button-size-final">
+/* ===== 首頁送出按鈕：加大、好按 ===== */
+#container > button{
+  min-height:48px !important;
+  padding:12px 24px !important;
+  font-size:18px !important;
+  font-weight:800 !important;
+  border-radius:9px !important;
+  cursor:pointer !important;
+}
+
+/* 精準處理首頁「送出」按鈕，避免其他按鈕一起變大 */
+#container > button:first-of-type{
+  min-width:140px !important;
+}
+
+/* ===== 測驗快捷列：縮小，按得到即可 ===== */
+html body > #quizBottomQuickBar{
+  gap:4px !important;
+  padding:4px 6px !important;
+}
+
+html body > #quizBottomQuickBar > button{
+  min-width:0 !important;
+  min-height:32px !important;
+  padding:6px 9px !important;
+  font-size:13px !important;
+  line-height:1.1 !important;
+  border-radius:6px !important;
+}
+
+/* 桌面也不要太大 */
+@media (min-width:701px){
+  html body > #quizBottomQuickBar > button{
+    min-width:58px !important;
+  }
+}
+
+/* 手機：再縮一點，保持容易點到 */
+@media (max-width:700px){
+  html body > #quizBottomQuickBar{
+    width:auto !important;
+    max-width:calc(100vw - 8px) !important;
+    gap:3px !important;
+    padding:4px !important;
+  }
+
+  html body > #quizBottomQuickBar > button{
+    min-width:0 !important;
+    min-height:32px !important;
+    padding:6px 7px !important;
+    font-size:12px !important;
+    flex:0 0 auto !important;
+  }
+}
+</style>
+
+
+<style id="selected-question-count-theme">
+body.v40-night #selectedQuestionCount{
+  background:#1A1A1A !important;
+  color:#F0EBF5 !important;
+  border-color:#555 !important;
+}
+body.v40-night #selectedQuestionCountHint{
+  color:#CFC8D2 !important;
+}
+body.v40-day #selectedQuestionCount{
+  background:#FFFFFF !important;
+  color:#26332A !important;
+}
+</style>
+
+
+<style id="progress-text-contrast-final">
+/* =====「已作答 1 / 100　1%」日間高對比 ===== */
+body.v40-day .v40-progress,
+body.v40-day #v40-progress,
+body.v40-day .v40-progress *,
+body.v40-day #v40-progress *{
+  color:#16281D !important;
+}
+
+/* 若進度文字本身是 span / div，不論原本 inline 顏色都提升對比 */
+body.v40-day [id*="progress"],
+body.v40-day [class*="progress"]{
+  color:#16281D !important;
+}
+
+/* 夜間：亮色字，避免黑底看不到 */
+body.v40-night .v40-progress,
+body.v40-night #v40-progress,
+body.v40-night .v40-progress *,
+body.v40-night #v40-progress *{
+  color:#F3EEE8 !important;
+}
+
+/* 進度本體若有底色，日間用白底、夜間用深灰底 */
+body.v40-day .v40-progress,
+body.v40-day #v40-progress{
+  background:#FFFFFF !important;
+  border-color:#AEBDB2 !important;
+}
+body.v40-night .v40-progress,
+body.v40-night #v40-progress{
+  background:#111111 !important;
+  border-color:#444444 !important;
+}
+
+/* 進度百分比與數字稍微加粗，方便快速辨識 */
+body.v40-day .v40-progress *,
+body.v40-night .v40-progress *{
+  text-shadow:none !important;
+  font-weight:800 !important;
+}
+</style>
+
+
+<style id="online-count-contrast-final">
+/* ===== 線上／再現人數：日夜模式高對比 ===== */
+body.v40-day #online-count,
+body.v40-day #online-count *,
+body.v40-day [id*="online"],
+body.v40-day [id*="Online"]{
+  color:#16281D !important;
+  text-shadow:none !important;
+  opacity:1 !important;
+}
+
+body.v40-night #online-count,
+body.v40-night #online-count *,
+body.v40-night [id*="online"],
+body.v40-night [id*="Online"]{
+  color:#F3EEE8 !important;
+  text-shadow:none !important;
+  opacity:1 !important;
+}
+
+/* 背景與文字分離，避免數字融進背景 */
+body.v40-day #online-count{
+  background:#FFFFFF !important;
+  border-color:#AEBDB2 !important;
+}
+body.v40-night #online-count{
+  background:#111111 !important;
+  border-color:#444444 !important;
+}
+</style>
+
+
+<style id="remove-submit-text-row-final">
+/* 測驗送出後上方／下方的提示字列不顯示，保留「送出」按鈕與結果內容 */
+#submitMessage,
+#submitStatus,
+#quizSubmitStatus,
+#examSubmitStatus,
+.submit-message,
+.submit-status,
+.quiz-submit-status,
+.exam-submit-status{
+  display:none !important;
+}
+</style>
+
+<script id="fresh-upload-cleanup-v20260909">
+(function(){
+  const RESET_KEY="64ding_fresh_upload_reset_20260909";
+  try{
+    if(localStorage.getItem(RESET_KEY)==="1") return;
+    Object.keys(localStorage).forEach(function(k){
+      if(
+        k==="questionStatsCurrentUserId" ||
+        k.startsWith("questionErrorStats_") ||
+        k==="v40-night-mode" ||
+        k==="publicSiteFontSize" ||
+        k==="publicBackgroundColor" ||
+        /^sb-.*auth-token$/i.test(k)
+      ) localStorage.removeItem(k);
+    });
+    localStorage.setItem(RESET_KEY,"1");
+  }catch(e){ console.warn("首次上傳初始化清除略過：",e); }
+})();
+</script>
+
+<style id="final-no-login-ui">
+/* ===== 完全免登入：隱藏登入系統 UI，不影響首頁與題庫 ===== */
+#loginPanel,
+#loginForm,
+#registerForm,
+#loginCard,
+.login-panel,
+.login-overlay{
+  display:none !important;
+}
+
+/* 功能表內的登入／登出、帳號設定、個人資料全部取消 */
+#menuLogoutBtn,
+#menuSignOutBtn,
+#accountSignOutBtn,
+#menuAccountBtn,
+#menuAccountPanel,
+#accountPanel{
+  display:none !important;
+}
+
+/* 不讓原本的「未登入就隱藏網站內容」規則再把首頁關掉 */
+body:not(.supabase-authenticated) #container,
+body:not(.supabase-authenticated) #siteMenu,
+body:not(.supabase-authenticated) #online-count,
+body:not(.supabase-authenticated) .marquee-container,
+body:not(.supabase-authenticated) #header,
+body:not(.supabase-authenticated) #v40-home-exam-countdown{
+  display:block !important;
+  visibility:visible !important;
+}
+
+/* 直接使用首頁 */
+body.no-login-direct #loginPanel{
+  display:none !important;
+}
+</style>
+<script id="final-no-login-init">
+(function(){
+  function enable(){
+    document.body.classList.add("no-login-direct");
+    document.body.classList.add("supabase-authenticated");
+    var p=document.getElementById("loginPanel");
+    if(p) p.style.display="none";
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",enable,{once:true});
+  }else{
+    enable();
+  }
+})();
+</script>
+
+
+<style id="reset-records-button-style">
+#menuResetBtn{
+  font-weight:800 !important;
+}
+</style>
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -4387,10 +5669,10 @@ body.supabase-authenticated #loginPanel {
     <div id="siteMenuUser" class="site-menu-user"></div>
     <button type="button" class="site-menu-item" id="menuSubjectsBtn">📚 各科狀況</button>
     <button type="button" class="site-menu-item" id="menuRiskBtn">⚠️ 錯題</button>
-    <button type="button" class="site-menu-item" id="menuRankBtn">🏆 使用者答題排行</button>
-    <button type="button" class="site-menu-item" id="menuSettingsBtn">⚙️ 設定</button>
+    
+    <button type="button" class="site-menu-item" id="menuSettingsBtn">🎨 背景設定</button>
 <button type="button" class="site-menu-item" id="menuAccountBtn">👤 帳號設定</button>
-    <button type="button" class="site-menu-item" id="menuThemeBtn">🌙 日／夜模式</button>
+    <button type="button" class="site-menu-item" id="menuThemeBtn">🌙 日／夜模式</button> <button type="button" class="site-menu-item" id="menuResetBtn">↻ 重置紀錄</button>
     <button type="button" class="site-menu-item site-menu-logout" id="menuLogoutBtn">🔐 登入／登出</button>
     <div id="menuSettingsPanel" class="site-menu-settings" hidden>
       <div class="site-menu-settings-title">⚙️ 設定</div>
@@ -4421,7 +5703,7 @@ body.supabase-authenticated #loginPanel {
 
       <div class="site-menu-settings-row">
         <strong>網站資訊</strong>
-        <div style="margin-top:5px">4.0V　｜　第四階段測驗：2026/11/07</div>
+        <div style="margin-top:5px">第四階段測驗：2026/11/07</div>
       </div>
 
       <div class="site-menu-settings-note">以上為公用設定，不需登入；設定只影響目前瀏覽器。</div>
@@ -5338,57 +6620,35 @@ function showLockMessage(score) {
 </script>
 
 
-<script id="v40-bottom-horizontal-nav-js">
-(function(){
-  function moveNav(){
-    const els=Array.from(document.querySelectorAll("body *"));
-    const groups=els.filter(el=>{
-      const n=el.children.length;
-      if(n<2||n>12) return false;
-      const t=(el.innerText||"").replace(/\s+/g,"");
-      return /頂端/.test(t)&&/底端/.test(t)&&(/單選/.test(t)||/複選/.test(t));
-    });
-    if(!groups.length) return;
-    const nav=groups.sort((a,b)=>a.children.length-b.children.length)[0];
-    if(!nav.classList.contains("v40-bottom-floating-nav")){
-      nav.classList.add("v40-bottom-floating-nav");
-    }
-
-    // 不修改 body，避免跑馬燈與頁首移位。
-    const host=nav.closest("main") ||
-               nav.closest(".container") ||
-               document.querySelector("main") ||
-               document.querySelector(".container");
-    if(host && !host.querySelector(":scope > .v40-bottom-nav-spacer")){
-      const spacer=document.createElement("div");
-      spacer.className="v40-bottom-nav-spacer";
-      spacer.setAttribute("aria-hidden","true");
-      host.appendChild(spacer);
-    }
-  }
-  function init(){
-    moveNav();
-    [200,600,1200,2500].forEach(t=>setTimeout(moveNav,t));
-  }
-  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init);
-  else init();
-  new MutationObserver(moveNav).observe(document.documentElement,{childList:true,subtree:true});
-})();
-</script>
-
 <script id="phase4-auto-countdown">
 (function () {
-  const examDate = new Date(2026, 10, 7, 0, 0, 0, 0); // 2026/11/07
+  // 第四階段測驗時間：2026/11/07 14:00
+  const examDate = new Date(2026, 10, 7, 14, 0, 0, 0);
 
   function updateCountdown() {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const diff = Math.ceil((examDate - today) / 86400000);
-    const days = Math.max(0, diff);
+    const diffMs = examDate.getTime() - now.getTime();
 
-    // Replace the complete existing countdown text wherever it appears.
-    const pattern = /第四階段測驗：2026\/11\/07\s*(?:｜|\|)\s*距離測驗還有\s*[\d\s&nbsp;]+天/g;
-    const replacement = `第四階段測驗：2026/11/07　｜　距離測驗還有：${days}天`;
+    if (diffMs <= 0) {
+      updateCountdownText("距離測驗還有：0天 0小時");
+      return;
+    }
+
+    const totalHours = Math.floor(diffMs / 3600000);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+
+    updateCountdownText(
+      `距離測驗還有：${days}天 ${hours}小時`
+    );
+  }
+
+  function updateCountdownText(countdownText) {
+    const replacement =
+      `第四階段測驗：2026/11/07　｜　${countdownText}`;
+
+    const pattern =
+      /(?:4\.0V\s*｜\s*)?第四階段測驗：2026\/11\/07\s*(?:｜|\|)\s*距離測驗還有：?\s*[\d\s&nbsp;天小時]+/g;
 
     document.querySelectorAll("body *").forEach(el => {
       if (el.children.length === 0 && pattern.test(el.textContent)) {
@@ -5403,6 +6663,8 @@ function showLockMessage(score) {
   } else {
     updateCountdown();
   }
+
+  // 每分鐘重新計算一次。
   setInterval(updateCountdown, 60 * 1000);
 })();
 </script>
@@ -6134,7 +7396,159 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
 })();
 </script>
-</body>
+
+<script id="remove-personal-profile-cleanup">
+(function(){
+  function removePersonalProfileMenu(){
+    var keywords = ["個人資料","儲存個人資料","安全設定","修改密碼"];
+    document.querySelectorAll("button,a,div,li").forEach(function(el){
+      var t=(el.textContent||"").replace(/\s+/g,"").trim();
+      if(keywords.some(function(k){ return t===k || t.indexOf(k)===0; })){
+        var item=el.closest(".menu-item,.menu-row,.menu-option,.dropdown-item,li");
+        if(item && item!==el) item.style.display="none";
+      }
+    });
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",removePersonalProfileMenu,{once:true});
+  }else{
+    removePersonalProfileMenu();
+  }
+})();
+</script>
+
+
+<script id="remove-account-logout-cleanup">
+(function(){
+  function removeLogoutLabels(){
+    var keywords=["登出此帳號","登出帳號","登出"];
+    document.querySelectorAll("button,a,div,li").forEach(function(el){
+      var t=(el.textContent||"").replace(/\s+/g,"").trim();
+      if(keywords.some(function(k){ return t===k; })){
+        var item=el.closest(".menu-item,.menu-row,.menu-option,.dropdown-item,li");
+        if(item && item!==el) item.style.display="none";
+        else el.style.display="none";
+      }
+    });
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",removeLogoutLabels,{once:true});
+  }else{
+    removeLogoutLabels();
+  }
+})();
+</script>
+
+
+<script id="remove-ranking-login-siteinfo-cleanup">
+(function(){
+  function hideMenuItems(){
+    var labels = [
+      "使用者答題排行",
+      "使用者排行",
+      "登入",
+      "登出",
+      "登出此帳號",
+      "網站資訊"
+    ];
+
+    document.querySelectorAll("button,a,li,.menu-item,.menu-row,.menu-option,.dropdown-item").forEach(function(el){
+      var t=(el.textContent||"").replace(/\s+/g,"").trim();
+      if(labels.indexOf(t)===-1) return;
+
+      // 優先隱藏整個選單項目，避免只剩空白按鈕。
+      var item=el.closest("li,.menu-item,.menu-row,.menu-option,.dropdown-item");
+      if(item) item.style.display="none";
+      else el.style.display="none";
+    });
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",hideMenuItems,{once:true});
+  }else{
+    hideMenuItems();
+  }
+})();
+</script>
+
+<div id="quizBottomQuickBar" aria-label="測驗快速導覽">
+  <button id="quizQuickTop" type="button"
+    onclick="window.scrollTo({top:0,behavior:'smooth'});">▲ 頂端</button>
+  <button id="btn-single" type="button"
+    onclick="scrollToSection('single');">★ 單選</button>
+  <button id="btn-multiple" type="button"
+    onclick="scrollToSection('multiple');">★ 複選</button>
+  <button id="quizQuickBottom" type="button"
+    onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});">▼ 底端</button>
+</div>
+
+<script id="quiz-bottom-fixed-guard-v2">
+(function(){
+  function lock(){
+    var bar=document.getElementById("quizBottomQuickBar");
+    if(!bar) return;
+    if(bar.parentElement !== document.body){
+      document.body.appendChild(bar);
+    }
+    bar.classList.remove("v40-bottom-floating-nav");
+    bar.style.setProperty("position","fixed","important");
+    bar.style.setProperty("left","50%","important");
+    bar.style.setProperty("right","auto","important");
+    bar.style.setProperty("top","auto","important");
+    bar.style.setProperty("bottom","0","important");
+    bar.style.setProperty("transform","translate3d(-50%,0,0)","important");
+    bar.style.setProperty("z-index","2147483647","important");
+  }
+  function init(){
+    lock();
+    [100,300,700,1200,2000].forEach(function(t){ setTimeout(lock,t); });
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else{
+    init();
+  }
+  document.addEventListener("click",function(){
+    setTimeout(lock,50);
+    setTimeout(lock,250);
+  },true);
+  document.addEventListener("change",function(){
+    setTimeout(lock,50);
+    setTimeout(lock,250);
+  },true);
+})();
+</script>
+
+<style>
+/* 統計摘要：改成更直觀的卡片式呈現 */
+.stats-summary-better {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(120px,1fr));
+    gap:10px;
+    margin:10px 0;
+}
+.stats-summary-better .stat-card {
+    padding:10px 8px;
+    border:1px solid #e6e6e6;
+    border-radius:10px;
+    background:#fff;
+    text-align:center;
+}
+.stats-summary-better .stat-label {
+    font-size:14px;
+    color:#666;
+    margin-bottom:3px;
+}
+.stats-summary-better .stat-value {
+    font-size:23px;
+    font-weight:400;
+}
+@media (max-width:700px){
+    .stats-summary-better { grid-template-columns:repeat(2,minmax(100px,1fr)); }
+}
+</style>
+
+
 <script>
     //globol settings
     cQuestionNum = 10;//是非題數
@@ -6339,7 +7753,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 
     // 自選科目測驗：保留各科原始題型與題目，只合併使用者勾選的科目
-    function prepareSelectedSubjects(selectedSubjects, full, shuffle) {
+    function prepareSelectedSubjects(selectedSubjects, full, shuffle, requestedCount) {
         fullQuestion = full;
         const picked = Array.isArray(selectedSubjects) ? selectedSubjects.filter(s => data[s] && data[s]["是非"] !== undefined) : [];
         questions = {"是非": [], "單選": [], "複選": []};
@@ -6356,6 +7770,26 @@ document.addEventListener("DOMContentLoaded",()=>{
 
         filterToWrongQuestions();
 
+        /* 自選題數：以三種題型合計後，隨機抽出指定數量 */
+        const count = Math.max(0, parseInt(requestedCount, 10) || 0);
+        const allTotal = questions["是非"].length + questions["單選"].length + questions["複選"].length;
+
+        if (count > 0 && count < allTotal) {
+            const pool = [];
+            ["是非","單選","複選"].forEach(type => {
+                questions[type].forEach(q => pool.push({type, q}));
+            });
+
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+
+            const pickedPool = pool.slice(0, count);
+            questions = {"是非": [], "單選": [], "複選": []};
+            pickedPool.forEach(item => questions[item.type].push(item.q));
+        }
+
         cQuestionNum = 0;
         sQuestionNum = 20;
         mQuestionNum = 20;
@@ -6363,36 +7797,44 @@ document.addEventListener("DOMContentLoaded",()=>{
         scorePerS = 2;
         scorePerM = 3;
 
-        if (questions["是非"].length !== 0) {
-            cQuestionNum = 10;
-            scorePerC = 2;
-            scorePerM = 2;
-        }
-
-        if (full) {
+        if (count > 0) {
+            /* 有指定題數時，三種題型目前實際抽到幾題就做幾題 */
             cQuestionNum = questions["是非"].length;
             sQuestionNum = questions["單選"].length;
             mQuestionNum = questions["複選"].length;
+            scorePerC = cQuestionNum > 0 ? 2 : 0;
+        } else {
+            if (questions["是非"].length !== 0) {
+                cQuestionNum = 10;
+                scorePerC = 2;
+                scorePerM = 2;
+            }
+
+            if (full) {
+                cQuestionNum = questions["是非"].length;
+                sQuestionNum = questions["單選"].length;
+                mQuestionNum = questions["複選"].length;
+            }
         }
 
         ["是非","單選","複選"].forEach(type => {
-            for (let i = questions[type].length; i > 0; i--) {
-                const j = Math.floor(Math.random() * i);
-                [questions[type][i], questions[type][j]] = [questions[type][j], questions[type][i - 1]];
+            for (let i = questions[type].length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[type][i], questions[type][j]] = [questions[type][j], questions[type][i]];
             }
         });
 
         if (shuffle) {
             ["單選","複選"].forEach(type => {
                 questions[type].forEach(q => {
-                    for (let i = q["選項"].length; i > 0; i--) {
-                        const j = Math.floor(Math.random() * i);
-                        [q["選項"][j], q["選項"][i - 1]] = [q["選項"][i - 1], q["選項"][j]];
+                    for (let i = q["選項"].length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [q["選項"][i], q["選項"][j]] = [q["選項"][j], q["選項"][i]];
                     }
                 });
             });
         }
-        console.log("自選科目測驗：", picked, questions);
+        console.log("自選科目測驗：", picked, "題數=", count || "原設定", questions);
     }
 
     //函數:比較兩陣列是否全等
@@ -7089,6 +8531,43 @@ const colorMap = {
             });
             panel.appendChild(list);
 
+            const countWrap = document.createElement("div");
+            countWrap.style.cssText = "margin:10px 0 4px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;";
+            const countLabel = document.createElement("label");
+            countLabel.htmlFor = "selectedQuestionCount";
+            countLabel.textContent = "📌 測驗題數";
+            countLabel.style.cssText = "font-weight:800;";
+            const countInput = document.createElement("input");
+            countInput.type = "number";
+            countInput.id = "selectedQuestionCount";
+            countInput.min = "1";
+            countInput.value = "20";
+            countInput.inputMode = "numeric";
+            countInput.style.cssText = "width:90px;padding:7px 9px;border:1px solid #aaa;border-radius:8px;text-align:center;font-weight:800;";
+            const countHint = document.createElement("span");
+            countHint.id = "selectedQuestionCountHint";
+            countHint.style.cssText = "font-size:13px;opacity:.8;";
+            countWrap.appendChild(countLabel);
+            countWrap.appendChild(countInput);
+            countWrap.appendChild(countHint);
+            panel.insertBefore(countWrap, list);
+
+            function updateSelectedQuestionCountLimit() {
+                const checked = [...panel.querySelectorAll(".selected-subject-checkbox:checked")].map(x => x.value);
+                const max = checked.reduce((sum, subject) => {
+                    const d = data[subject];
+                    return sum + (d?.["是非"]?.length || 0) + (d?.["單選"]?.length || 0) + (d?.["複選"]?.length || 0);
+                }, 0);
+                countInput.max = String(Math.max(1, max || 1));
+                if (max > 0 && Number(countInput.value) > max) countInput.value = String(max);
+                countHint.textContent = max > 0 ? "最多 " + max + " 題" : "請先選科目";
+            }
+
+            panel.querySelectorAll(".selected-subject-checkbox").forEach(cb => {
+                cb.addEventListener("change", updateSelectedQuestionCountLimit);
+            });
+            updateSelectedQuestionCountLimit();
+
             const start = document.createElement("button");
             start.type = "button";
             start.textContent = "開始自選測驗";
@@ -7100,10 +8579,24 @@ const colorMap = {
                     return;
                 }
                 wrongOnly = document.getElementById("wrongOnly").checked;
+                const requestedCount = Math.max(1, parseInt(document.getElementById("selectedQuestionCount")?.value || "0", 10) || 0);
+                const availableCount = selected.reduce((sum, subject) => {
+                    const d = data[subject];
+                    return sum + (d?.["是非"]?.length || 0) + (d?.["單選"]?.length || 0) + (d?.["複選"]?.length || 0);
+                }, 0);
+                if (!availableCount) {
+                    alert("所選科目目前沒有可測驗的題目！");
+                    return;
+                }
+                if (requestedCount > availableCount) {
+                    alert("題目數量不能超過所選科目的總題數（" + availableCount + " 題）。");
+                    return;
+                }
                 prepareSelectedSubjects(
                     selected,
                     document.getElementById("fullQuestion").checked,
-                    document.getElementById("needShuffle").checked
+                    document.getElementById("needShuffle").checked,
+                    requestedCount
                 );
                 const reviewCount = (questions["是非"]?.length || 0) + (questions["單選"]?.length || 0) + (questions["複選"]?.length || 0);
                 if (wrongOnly && reviewCount === 0) {
@@ -7117,9 +8610,11 @@ const colorMap = {
 
             panel.querySelector("#selectAllSubjects").addEventListener("click", () => {
                 panel.querySelectorAll(".selected-subject-checkbox").forEach(x => x.checked = true);
+                updateSelectedQuestionCountLimit();
             });
             panel.querySelector("#clearAllSubjects").addEventListener("click", () => {
                 panel.querySelectorAll(".selected-subject-checkbox").forEach(x => x.checked = false);
+                updateSelectedQuestionCountLimit();
             });
 
             selectedSubjectButton.insertAdjacentElement("afterend", panel);
@@ -7675,33 +9170,16 @@ function updateButtonDisplay() {
 }
 
 async function bootAuthenticatedPage(){
-  try {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
+  try{
+    // 完全免登入：直接啟動原本首頁，不要求帳號／密碼。
+    questionStatsCurrentUserId = null;
+    localStorage.removeItem("questionStatsCurrentUserId");
 
-    questionStatsCurrentUserId = user.id;
-    localStorage.setItem("questionStatsCurrentUserId", user.id);
-    document.body.classList.add("supabase-authenticated");
-
-    // 先載入目前 user_id 的雲端紀錄，再建立首頁。
-    if (typeof loadCurrentUserQuestionStatsFromSupabase === "function") {
-      try {
-        await loadCurrentUserQuestionStatsFromSupabase();
-      } catch (e) {
-        console.warn("載入個人答題紀錄失敗，仍繼續建立首頁：", e);
-      }
-    }
-
-    if (typeof refreshUserProfile === "function") {
-      try { await refreshUserProfile(); }
-      catch(e) { console.warn("載入個人資料失敗，仍繼續建立首頁：", e); }
-    }
-
-    if (typeof cleanPage === "function") cleanPage();
-    if (typeof showInitialPage === "function") showInitialPage();
-    if (typeof updateHomepageErrorRate === "function") updateHomepageErrorRate();
-  } catch (e) {
-    console.error("登入狀態初始化失敗：", e);
+    if(typeof cleanPage==="function") cleanPage();
+    if(typeof showInitialPage==="function") showInitialPage();
+    if(typeof updateHomepageErrorRate==="function") updateHomepageErrorRate();
+  }catch(e){
+    console.error("首頁初始化失敗：",e);
   }
 }
 
@@ -7710,6 +9188,7 @@ if (document.readyState === "loading") {
 } else {
   bootAuthenticatedPage();
 }
+
 
 // 監聽按鈕點擊與選單切換，點擊「送出」產生題目時自動顯示按鈕
 document.addEventListener("change", updateButtonDisplay);
@@ -7723,39 +9202,89 @@ updateButtonDisplay();
 </script>
 
 <!-- ▼▼▼ 3. 快捷按鈕 HTML 結構 ▼▼▼ -->
-<div id="scroll-btns" style="position: fixed; bottom: 20px; right: 20px; display: none; flex-direction: column; gap: 8px; z-index: 9999;">
-	<button onclick="window.scrollTo({top: 0, behavior: 'smooth'});" style="padding: 10px 14px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">▲ 頂端</button>
-	<button id="btn-single" onclick="scrollToSection('single');" style="padding: 10px 14px; background-color: #17a2b8; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">★ 單選</button>
-	<button onclick="scrollToSection('multiple');" style="padding: 10px 14px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">★ 複選</button>
-	<button onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});" style="padding: 10px 14px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">▼ 底端</button>
-</div>
-</html>
 
-<style>
-/* 統計摘要：改成更直觀的卡片式呈現 */
-.stats-summary-better {
-    display:grid;
-    grid-template-columns:repeat(4,minmax(120px,1fr));
-    gap:10px;
-    margin:10px 0;
-}
-.stats-summary-better .stat-card {
-    padding:10px 8px;
-    border:1px solid #e6e6e6;
-    border-radius:10px;
-    background:#fff;
-    text-align:center;
-}
-.stats-summary-better .stat-label {
-    font-size:14px;
-    color:#666;
-    margin-bottom:3px;
-}
-.stats-summary-better .stat-value {
-    font-size:23px;
-    font-weight:400;
-}
-@media (max-width:700px){
-    .stats-summary-better { grid-template-columns:repeat(2,minmax(100px,1fr)); }
-}
-</style>
+
+<script id="final-no-login-cleanup">
+(function(){
+  function hideLoginItems(){
+    var labels=["登入","登出","登出此帳號","登入／登出","帳號設定","個人資料"];
+    document.querySelectorAll("button,a,li,.menu-item,.menu-row,.menu-option,.dropdown-item").forEach(function(el){
+      var t=(el.textContent||"").replace(/\s+/g,"").trim();
+      if(labels.indexOf(t)===-1)return;
+      var item=el.closest("li,.menu-item,.menu-row,.menu-option,.dropdown-item");
+      if(item) item.style.display="none";
+      else el.style.display="none";
+    });
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",hideLoginItems,{once:true});
+  }else{
+    hideLoginItems();
+  }
+})();
+</script>
+
+
+<script id="reset-records-final">
+(function(){
+  function doReset(){
+    var ok = confirm("確定要重置？重置的話記錄會消失喔~~提醒");
+    if(!ok) return;
+
+    try{
+      /* 答題統計 */
+      Object.keys(localStorage).forEach(function(k){
+        if(
+          k === "questionStatsCurrentUserId" ||
+          k === "questionErrorStats_guest" ||
+          k.indexOf("questionErrorStats_") === 0
+        ){
+          localStorage.removeItem(k);
+        }
+      });
+
+      /* 清除目前版本的瀏覽器個人設定 */
+      localStorage.removeItem("publicBackgroundColor");
+      localStorage.removeItem("publicSiteFontSize");
+
+      /* 恢復日間預設 */
+      document.body.classList.remove("v40-night","font-small","font-large");
+      document.body.classList.add("v40-day");
+      document.documentElement.classList.remove("user-custom-bg");
+      document.body.classList.remove("user-custom-bg");
+
+      document.documentElement.style.removeProperty("background-color");
+      document.body.style.removeProperty("background-color");
+      document.documentElement.style.removeProperty("--user-page-bg");
+      document.body.style.removeProperty("--user-page-bg");
+
+      /* 更新背景選色器 */
+      var picker=document.getElementById("backgroundColorPicker");
+      if(picker) picker.value="#E3EFE5";
+
+      /* 回首頁 */
+      if(typeof cleanPage==="function") cleanPage();
+      if(typeof showInitialPage==="function") showInitialPage();
+      if(typeof updateHomepageErrorRate==="function") updateHomepageErrorRate();
+
+      alert("已完成重置，答題記錄已清除。");
+    }catch(e){
+      console.error("重置失敗：",e);
+      alert("重置失敗，請重新整理頁面後再試。");
+    }
+  }
+
+  function bind(){
+    var btn=document.getElementById("menuResetBtn");
+    if(btn) btn.addEventListener("click",doReset);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",bind,{once:true});
+  }else{
+    bind();
+  }
+})();
+</script>
+
+</body></html>
