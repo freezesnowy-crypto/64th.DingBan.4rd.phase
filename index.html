@@ -2,7 +2,7 @@
 ﻿<!-- 網頁作者:64期士高丁班 -->
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="zh-Hant">
 <head>
 <meta charset="utf-8"/>
 <title>64th丁 第四階段測驗</title>
@@ -5398,31 +5398,6 @@ body:not(.supabase-authenticated) #container{
 </style>
 
 <body>
-<style id="supabase-login-gate-css">
-/* 未登入：只顯示登入畫面；登入成功後才顯示首頁內容 */
-body:not(.supabase-authenticated) > :not(#loginPanel):not(#siteMenu):not(script):not(style) {
-  display: none !important;
-}
-/* 未登入時，功能表仍可使用，但只公開「設定」 */
-body:not(.supabase-authenticated) #siteMenu .site-menu-user,
-body:not(.supabase-authenticated) #siteMenu .site-menu-item:not(#menuSettingsBtn),
-body:not(.supabase-authenticated) #siteMenu #menuAccountPanel,
-body:not(.supabase-authenticated) #siteMenu #menuSubjectsPanel,
-body:not(.supabase-authenticated) #siteMenu #menuRiskPanel,
-body:not(.supabase-authenticated) #siteMenu #menuRankPanel {
-  display: none !important;
-}
-body:not(.supabase-authenticated) #siteMenu #menuSettingsBtn {
-  display: block !important;
-}
-body.supabase-authenticated #loginPanel {
-  display: none !important;
-}
-#loginPanel {
-  position: relative;
-  z-index: 10000;
-}
-</style>
 <div id="siteMenu" class="site-menu" aria-label="功能表">
   <button id="siteMenuToggle" type="button" class="site-menu-toggle" aria-expanded="false" aria-controls="siteMenuPanel">☰</button>
   <div id="siteMenuPanel" class="site-menu-panel" hidden>
@@ -6958,15 +6933,15 @@ body.v40-night .account-divider{background:#374151;}
     const target=document.getElementById("v40-home-exam-countdown");
     if(!target) return;
     const now=new Date();
-    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    const exam=new Date(2026,10,7);
-    const days=Math.max(0,Math.ceil((exam-today)/86400000));
-    if(days>0){
-      target.textContent="📅 第四階段測驗：2026/11/07　｜　距離測驗還有："+days+"天";
-    }else if(days===0){
-      target.textContent="📅 第四階段測驗：2026/11/07　｜　今天就是測驗日！";
+    const exam=new Date(2026,10,7,14,0,0,0);
+    const diff=exam-now;
+    if(diff>0){
+      const totalHours=Math.floor(diff/3600000);
+      const days=Math.floor(totalHours/24);
+      const hours=totalHours%24;
+      target.textContent="📅 第四階段測驗：2026/11/07 14:00　｜　距離測驗還有："+days+"天 "+hours+"小時";
     }else{
-      target.textContent="📅 第四階段測驗：2026/11/07　｜　測驗已經到了";
+      target.textContent="📅 第四階段測驗：2026/11/07 14:00　｜　測驗時間已到";
     }
   }
   update();
@@ -6993,22 +6968,6 @@ body.v40-night .account-divider{background:#374151;}
   }
 })();
 </script>
-
-<script id="current-user-sync-listener">
-(function(){
-  if(!window.supabaseClient || !supabaseClient.auth) return;
-  supabaseClient.auth.onAuthStateChange(function(event,session){
-    if(event==="SIGNED_IN" && session?.user){
-      questionStatsCurrentUserId=session.user.id;
-      localStorage.setItem("questionStatsCurrentUserId",session.user.id);
-      setTimeout(function(){
-        if(typeof syncCurrentUserDisplay==="function") syncCurrentUserDisplay();
-      },0);
-    }
-  });
-})();
-</script>
-
 <script id="public-settings-controls-js">
 (()=>{
   const storageKey="publicSiteFontSize";
