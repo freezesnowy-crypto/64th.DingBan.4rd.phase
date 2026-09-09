@@ -19,219 +19,25 @@ const supabaseClient = supabase.createClient(
 );
 </script>
 
-<script>
-/* ===== Supabase：帳號／名稱／密碼登入註冊（Email 僅作為 Supabase 內部識別，不顯示給使用者） ===== */
-function normalizeUsername(value) {
-  return String(value || "").trim().toLowerCase();
-}
-
-function usernameToAuthEmail(username) {
-  return normalizeUsername(username) + "@exam.local";
-}
-
-function validateUsername(username) {
-  return /^[a-z0-9._-]{3,32}$/.test(username);
-}
-
-function setLoginStatus(message, isError = false) {
-  const el = document.getElementById("loginStatus");
-  if (!el) return;
-  el.textContent = message;
-  el.style.color = isError ? "#c62828" : "#2e7d32";
-}
-
-function showLoginMode(mode) {
-  const loginForm = document.getElementById("loginForm");
-  const registerForm = document.getElementById("registerForm");
-  if (!loginForm || !registerForm) return;
-
-  const isRegister = mode === "register";
-  loginForm.style.display = isRegister ? "none" : "block";
-  registerForm.style.display = isRegister ? "block" : "none";
-  setLoginStatus("");
-}
-
-async function loginUser() {
-  const username = normalizeUsername(document.getElementById("loginUsername")?.value);
-  const password = document.getElementById("loginPassword")?.value || "";
-
-  if (!username || !password) {
-    setLoginStatus("請輸入帳號和密碼", true);
-    return;
-  }
-  if (!validateUsername(username)) {
-    setLoginStatus("帳號需 3～32 碼，只能使用英文、數字、.、_、-", true);
-    return;
-  }
-
-  setLoginStatus("登入中...");
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email: usernameToAuthEmail(username),
-    password
-  });
-
-  if (error) {
-    console.error(error);
-    setLoginStatus("登入失敗：帳號或密碼錯誤", true);
-    return;
-  }
-
-  document.body.classList.add("supabase-authenticated");
-  setLoginStatus("登入成功！");
-  console.log("目前使用者：", data.user);
-
-  try {
-    await syncCurrentUserDisplay();
-    if (typeof cleanPage === "function") cleanPage();
-    if (typeof showInitialPage === "function") showInitialPage();
-    if (typeof updateHomepageErrorRate === "function") updateHomepageErrorRate();
-  } catch (e) {
-    console.error("登入後同步／首頁建立失敗：", e);
-    setLoginStatus("登入成功，但資料同步失敗，請重新整理。", true);
-  }
-}
-
-async function registerUser() {
-  const name = String(document.getElementById("registerName")?.value || "").trim();
-  const username = normalizeUsername(document.getElementById("registerUsername")?.value);
-  const password = document.getElementById("registerPassword")?.value || "";
-  const confirmPassword = document.getElementById("registerPasswordConfirm")?.value || "";
-
-  if (!name || !username || !password || !confirmPassword) {
-    setLoginStatus("請完整填寫名稱、帳號、密碼和確認密碼", true);
-    return;
-  }
-  if (!validateUsername(username)) {
-    setLoginStatus("帳號需 3～32 碼，只能使用英文、數字、.、_、-", true);
-    return;
-  }
-  if (password.length < 6) {
-    setLoginStatus("密碼至少需要 6 個字元", true);
-    return;
-  }
-  if (password !== confirmPassword) {
-    setLoginStatus("兩次輸入的密碼不一致", true);
-    return;
-  }
-
-  setLoginStatus("註冊中...");
-
-  const authEmail = usernameToAuthEmail(username);
-  const { data, error } = await supabaseClient.auth.signUp({
-    email: authEmail,
-    password,
-    options: {
-      data: {
-        name,
-        username
-      }
-    }
-  });
-
-  if (error) {
-    console.error(error);
-    setLoginStatus("註冊失敗：" + (error.message || "請稍後再試"), true);
-    return;
-  }
-
-  if (!data.user) {
-    setLoginStatus("註冊失敗：沒有建立使用者", true);
-    return;
-  }
-
-  // 需要先在 Supabase 建立 public.profiles（見頁面下方說明）
-  let profileError = null;
-  if (data.session) {
-    const result = await supabaseClient.from("profiles").upsert({
-      id: data.user.id,
-      name,
-      username,
-      created_at: new Date().toISOString()
-    }, { onConflict: "id" });
-    profileError = result.error;
-  }
-
-  if (profileError) {
-    console.error(profileError);
-    setLoginStatus("帳號已建立，但 profiles 建立失敗：" + profileError.message, true);
-    return;
-  }
-
-  if (data.session) {
-    document.body.classList.add("supabase-authenticated");
-    setLoginStatus("註冊成功，已登入！");
-    try {
-      await syncCurrentUserDisplay();
-      if (typeof cleanPage === "function") cleanPage();
-      if (typeof showInitialPage === "function") showInitialPage();
-      if (typeof updateHomepageErrorRate === "function") updateHomepageErrorRate();
-    } catch(e) {
-      console.warn("註冊後同步失敗：",e);
-    }
-  } else {
-    setLoginStatus("帳號已建立；請到 Supabase 關閉 Confirm email，之後即可直接用帳號登入。", false);
-  }
-}
-
-async function refreshUserProfile() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) return null;
-
-  const { data: profile, error } = await supabaseClient
-    .from("profiles")
-    .select("id,name,username,created_at")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.warn("讀取 profiles 失敗：", error);
-  }
-
-  const safeProfile = profile || {};
-  const fallbackName = String(user.user_metadata?.name || user.user_metadata?.full_name || "").trim();
-  const fallbackUsername = String(user.user_metadata?.username || "").trim();
-
-  const panel = document.getElementById("loginPanel");
-  if (panel) {
-    panel.innerHTML = `
-      <div style="font-size:20px;font-weight:bold;text-align:center">✅ 已登入</div>
-      <div style="text-align:center;margin-top:8px">${safeProfile.name || fallbackName || safeProfile.username || fallbackUsername || ""}</div>
-      <div style="text-align:center;margin-top:4px;font-size:14px;color:#666">帳號：${safeProfile.username || fallbackUsername || ""}</div>
-      <button type="button" onclick="logoutUser()" style="display:block;margin:12px auto 0;padding:9px 18px;cursor:pointer">登出</button>
-    `;
-  }
-  return profile || safeProfile;
-}
-
-async function logoutUser() {
-  const { error } = await supabaseClient.auth.signOut();
-  if (error) {
-    setLoginStatus("登出失敗：" + error.message, true);
-    return;
-  }
-  questionStatsCurrentUserId = null;
-  localStorage.removeItem("questionStatsCurrentUserId");
-  document.body.classList.remove("supabase-authenticated");
-  location.reload();
-}
+<script id="guest-only-auth-disabled">
+/* 純免登入模式：保留 Supabase client 供其他公用功能使用，但不建立登入門檻。 */
+function setLoginStatus(){ return; }
+function showLoginMode(){ return; }
+async function loginUser(){ return false; }
+async function registerUser(){ return false; }
+async function logoutUser(){ return false; }
+async function refreshUserProfile(){ return null; }
+async function syncCurrentUserDisplay(){ return null; }
 
 async function checkLogin(){
+  document.body.classList.add("no-login-direct");
+  document.body.classList.add("supabase-authenticated");
   try{
-    document.body.classList.add("no-login-direct");
-    document.body.classList.add("supabase-authenticated");
-    if(typeof bootAuthenticatedPage==="function"){
-      await bootAuthenticatedPage();
-    }else{
-      if(typeof cleanPage==="function") cleanPage();
-      if(typeof showInitialPage==="function") showInitialPage();
-    }
+    if(typeof cleanPage==="function") cleanPage();
+    if(typeof showInitialPage==="function") showInitialPage();
+    if(typeof updateHomepageErrorRate==="function") updateHomepageErrorRate();
   }catch(e){
-    console.error("免登入初始化失敗：",e);
-    try{
-      if(typeof cleanPage==="function") cleanPage();
-      if(typeof showInitialPage==="function") showInitialPage();
-    }catch(err){}
+    console.error("首頁初始化失敗：",e);
   }
 }
 </script>
@@ -5504,6 +5310,21 @@ body.no-login-direct #loginPanel{
 }
 </style>
 
+
+<style id="pure-guest-final">
+#loginPanel,#loginForm,#registerForm,#loginUsername,#loginPassword,
+#registerUsername,#registerPassword,#registerName,#loginStatus,#registerStatus,
+#menuLogoutBtn,#menuSignOutBtn,#menuAccountBtn,#menuAccountPanel,
+#accountSignOutBtn{
+  display:none!important;
+  visibility:hidden!important;
+}
+body:not(.supabase-authenticated) #container{
+  display:block!important;
+  visibility:visible!important;
+}
+</style>
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -5690,15 +5511,7 @@ body.supabase-authenticated #loginPanel {
       <div class="site-menu-settings-note">以上為公用設定，不需登入；設定只影響目前瀏覽器。</div>
     </div>
 
-    <div id="menuAccountPanel" class="site-menu-settings menu-account-settings" hidden>
-      <div class="account-profile-hero">
-        <div id="accountAvatar" class="account-avatar">U</div>
-        <div class="account-profile-main">
-          <div class="account-profile-eyebrow">個人資料</div>
-          <div id="accountDisplayName" class="account-profile-name">使用者</div>
-          <div id="accountDisplayUsername" class="account-profile-username">@username</div>
-        </div>
-      </div>
+    
 
       <div class="account-profile-stats">
         <div class="account-profile-stat">
@@ -9291,6 +9104,23 @@ updateButtonDisplay();
   }else{
     start();
   }
+})();
+</script>
+
+
+<script id="pure-guest-cleanup">
+(function(){
+  function clean(){
+    var labels=["登入","登出","登入／登出","帳號設定","個人資料"];
+    document.querySelectorAll("button,a,li").forEach(function(el){
+      var t=(el.textContent||"").replace(/\s+/g,"").trim();
+      if(labels.indexOf(t)<0)return;
+      var item=el.closest("li,.menu-item,.menu-row,.menu-option,.dropdown-item");
+      if(item) item.remove(); else el.remove();
+    });
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",clean,{once:true});
+  else clean();
 })();
 </script>
 
