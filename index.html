@@ -216,17 +216,22 @@ async function logoutUser() {
   location.reload();
 }
 
-async function checkLogin() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (user) {
+async function checkLogin(){
+  try{
+    document.body.classList.add("no-login-direct");
     document.body.classList.add("supabase-authenticated");
-    console.log("已登入：", user.email);
-    await syncCurrentUserDisplay();
-  } else {
-    questionStatsCurrentUserId = null;
-    localStorage.removeItem("questionStatsCurrentUserId");
-    document.body.classList.remove("supabase-authenticated");
-    console.log("目前尚未登入");
+    if(typeof bootAuthenticatedPage==="function"){
+      await bootAuthenticatedPage();
+    }else{
+      if(typeof cleanPage==="function") cleanPage();
+      if(typeof showInitialPage==="function") showInitialPage();
+    }
+  }catch(e){
+    console.error("免登入初始化失敗：",e);
+    try{
+      if(typeof cleanPage==="function") cleanPage();
+      if(typeof showInitialPage==="function") showInitialPage();
+    }catch(err){}
   }
 }
 </script>
@@ -5488,6 +5493,17 @@ body.no-login-direct #loginPanel{
 }
 </style>
 
+
+<style id="absolute-no-login-final">
+#loginPanel,#loginForm,#registerForm,#loginUsername,#loginPassword,
+#registerUsername,#registerPassword,#registerName,#loginStatus,#registerStatus{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+</style>
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -5629,39 +5645,6 @@ body.supabase-authenticated #loginPanel {
   z-index: 10000;
 }
 </style>
-<div id="loginPanel" style="
-  max-width:380px;
-  margin:20px auto;
-  padding:18px;
-  border:1px solid #ccc;
-  border-radius:12px;
-  background:#fff;
-">
-
-  <div style="font-size:20px;font-weight:bold;text-align:center;margin-bottom:14px;">
-    🔐 測驗系統
-  </div>
-
-  <div id="loginForm">
-    <input id="loginUsername" type="text" autocomplete="username" placeholder="帳號" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
-    <input id="loginPassword" type="password" autocomplete="current-password" placeholder="密碼" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
-    <button type="button" onclick="loginUser()" style="width:100%;padding:10px;cursor:pointer;">登入</button>
-    <button type="button" onclick="showLoginMode('register')" style="width:100%;padding:10px;margin-top:8px;cursor:pointer;">建立新帳號</button>
-  </div>
-
-  <div id="registerForm" style="display:none;">
-    <input id="registerName" type="text" autocomplete="name" placeholder="名稱" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
-    <input id="registerUsername" type="text" autocomplete="username" placeholder="帳號（3～32 碼：英文、數字、.、_、-）" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
-    <input id="registerPassword" type="password" autocomplete="new-password" placeholder="密碼（至少 6 碼）" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
-    <input id="registerPasswordConfirm" type="password" autocomplete="new-password" placeholder="確認密碼" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;">
-    <button type="button" onclick="registerUser()" style="width:100%;padding:10px;cursor:pointer;">註冊</button>
-    <button type="button" onclick="showLoginMode('login')" style="width:100%;padding:10px;margin-top:8px;cursor:pointer;">返回登入</button>
-  </div>
-
-  <div id="loginStatus" style="margin-top:10px;text-align:center;font-size:14px;min-height:20px;"></div>
-</div>
-
-<!-- 功能表：登入後顯示 -->
 <div id="siteMenu" class="site-menu" aria-label="功能表">
   <button id="siteMenuToggle" type="button" class="site-menu-toggle" aria-expanded="false" aria-controls="siteMenuPanel">☰</button>
   <div id="siteMenuPanel" class="site-menu-panel" hidden>
@@ -5671,9 +5654,7 @@ body.supabase-authenticated #loginPanel {
     <button type="button" class="site-menu-item" id="menuRiskBtn">⚠️ 錯題</button>
     
     <button type="button" class="site-menu-item" id="menuSettingsBtn">🎨 背景設定</button>
-<button type="button" class="site-menu-item" id="menuAccountBtn">👤 帳號設定</button>
-    <button type="button" class="site-menu-item" id="menuThemeBtn">🌙 日／夜模式</button> <button type="button" class="site-menu-item" id="menuResetBtn">↻ 重置紀錄</button>
-    <button type="button" class="site-menu-item site-menu-logout" id="menuLogoutBtn">🔐 登入／登出</button>
+<button type="button" class="site-menu-item" id="menuThemeBtn">🌙 日／夜模式</button> <button type="button" class="site-menu-item" id="menuResetBtn">↻ 重置紀錄</button>
     <div id="menuSettingsPanel" class="site-menu-settings" hidden>
       <div class="site-menu-settings-title">⚙️ 設定</div>
 
@@ -5764,7 +5745,6 @@ body.supabase-authenticated #loginPanel {
 
       <div class="account-divider"></div>
       <button type="button" class="account-reset-btn" id="accountResetStatsBtn">↻ 重置紀錄</button>
-      <button type="button" class="account-danger-btn" id="accountSignOutBtn">🚪 登出此帳號</button>
       <div id="accountSettingsStatus" class="account-settings-status" aria-live="polite"></div>
     </div>
   </div>
@@ -9283,6 +9263,33 @@ updateButtonDisplay();
     document.addEventListener("DOMContentLoaded",bind,{once:true});
   }else{
     bind();
+  }
+})();
+</script>
+
+
+<script id="absolute-no-login-guard">
+(function(){
+  function forceDirect(){
+    try{
+      document.body.classList.add("no-login-direct");
+      document.body.classList.add("supabase-authenticated");
+      var p=document.getElementById("loginPanel");
+      if(p) p.remove();
+    }catch(e){}
+  }
+  function start(){
+    forceDirect();
+    try{
+      if(typeof bootAuthenticatedPage==="function"){
+        bootAuthenticatedPage();
+      }
+    }catch(e){}
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",start,{once:true});
+  }else{
+    start();
   }
 })();
 </script>
