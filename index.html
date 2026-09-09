@@ -5325,6 +5325,43 @@ body:not(.supabase-authenticated) #container{
 }
 </style>
 
+
+<style id="google-browser-no-login-final">
+#loginPanel,#loginForm,#registerForm,#loginUsername,#loginPassword,#registerUsername,#registerPassword,#registerName,#loginStatus,#registerStatus,
+#menuAccountBtn,#menuAccountPanel,#menuLogoutBtn,#menuSignOutBtn,#accountSignOutBtn{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+</style>
+<script id="google-browser-no-login-bootstrap">
+(function(){
+  function boot(){
+    try{
+      document.body.classList.add("no-login-direct","supabase-authenticated");
+
+      var p=document.getElementById("loginPanel");
+      if(p) p.remove();
+
+      Object.keys(localStorage).forEach(function(k){
+        if(/^sb-.*auth-token$/i.test(k)) localStorage.removeItem(k);
+      });
+
+      if(typeof cleanPage==="function") cleanPage();
+      if(typeof showInitialPage==="function") showInitialPage();
+      if(typeof updateHomepageErrorRate==="function") updateHomepageErrorRate();
+    }catch(e){
+      console.error("免登入啟動失敗：",e);
+    }
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",boot,{once:true});
+  }else{
+    boot();
+  }
+})();
+</script>
+
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -5360,86 +5397,6 @@ body:not(.supabase-authenticated) #container{
 #v40-night-toggle { display:none !important; }
 </style>
 
-<style id="login-panel-alignment-fix">
-/* 登入介面：統一左右寬度與間距，避免受全站 button margin 影響 */
-#loginPanel{
-  width: min(380px, calc(100vw - 32px)) !important;
-  max-width: 380px !important;
-  margin: 28px auto !important;
-  padding: 22px !important;
-  box-sizing: border-box !important;
-  background: #17131f !important;
-  border: 1px solid #5b4a72 !important;
-  border-radius: 14px !important;
-  color: #eee8f5 !important;
-}
-#loginPanel > div,
-#loginPanel #loginForm,
-#loginPanel #registerForm{
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-#loginPanel input{
-  display:block !important;
-  width:100% !important;
-  max-width:none !important;
-  min-width:0 !important;
-  margin:0 0 10px 0 !important;
-  padding:11px 12px !important;
-  box-sizing:border-box !important;
-  border:1px solid #594b68 !important;
-  border-radius:8px !important;
-  background:#25202d !important;
-  color:#f3edf8 !important;
-}
-#loginPanel input:focus{
-  outline:none !important;
-  border-color:#9b7fc7 !important;
-  box-shadow:0 0 0 2px rgba(155,127,199,.18) !important;
-}
-#loginPanel button{
-  display:block !important;
-  width:100% !important;
-  max-width:none !important;
-  min-width:0 !important;
-  margin:0 0 10px 0 !important;
-  padding:11px 12px !important;
-  box-sizing:border-box !important;
-  border:1px solid #665278 !important;
-  border-radius:8px !important;
-  background:#3a3044 !important;
-  color:#f5eefb !important;
-  text-align:center !important;
-  font-size:18px !important;
-  line-height:1.3 !important;
-  cursor:pointer !important;
-}
-#loginPanel button:hover{
-  background:#4a3b57 !important;
-}
-#loginPanel #loginForm button:last-child,
-#loginPanel #registerForm button:last-child{
-  margin-top:2px !important;
-}
-#loginPanel #loginStatus{
-  width:100% !important;
-  min-height:24px !important;
-  margin:4px 0 0 !important;
-  text-align:center !important;
-  box-sizing:border-box !important;
-}
-@media (max-width:700px){
-  #loginPanel{
-    width:calc(100vw - 24px) !important;
-    padding:18px !important;
-  }
-  #loginPanel input,
-  #loginPanel button{
-    font-size:17px !important;
-    min-height:46px !important;
-  }
-}
-</style>
 <body>
 <style id="supabase-login-gate-css">
 /* 未登入：只顯示登入畫面；登入成功後才顯示首頁內容 */
@@ -6941,32 +6898,6 @@ body.v40-night .account-divider{background:#374151;}
       await loadAccountCard();
     });
 
-    document.getElementById("accountChangePasswordBtn")?.addEventListener("click",async()=>{
-      const current=document.getElementById("accountCurrentPassword")?.value||"";
-      const next=document.getElementById("accountNewPassword")?.value||"";
-      const confirmPwd=document.getElementById("accountConfirmPassword")?.value||"";
-      if(!current || !next || !confirmPwd){ setAccountStatus("請完整填寫密碼欄位",true); return; }
-      if(next.length<6){ setAccountStatus("新密碼至少需要 6 個字元",true); return; }
-      if(next!==confirmPwd){ setAccountStatus("兩次新密碼不一致",true); return; }
-
-      const {data:{user}}=await supabaseClient.auth.getUser();
-      if(!user){ setAccountStatus("尚未登入",true); return; }
-
-      setAccountStatus("驗證目前密碼中...");
-      const {error:verifyError}=await supabaseClient.auth.signInWithPassword({
-        email:user.email,password:current
-      });
-      if(verifyError){ setAccountStatus("目前密碼不正確",true); return; }
-
-      setAccountStatus("修改密碼中...");
-      const {error:updateError}=await supabaseClient.auth.updateUser({password:next});
-      if(updateError){ setAccountStatus("修改密碼失敗："+updateError.message,true); return; }
-
-      document.getElementById("accountCurrentPassword").value="";
-      document.getElementById("accountNewPassword").value="";
-      document.getElementById("accountConfirmPassword").value="";
-      setAccountStatus("密碼已修改完成");
-    });
 
     document.getElementById("accountResetStatsBtn")?.addEventListener("click",async()=>{
       if(typeof resetErrorStats === "function") await resetErrorStats();
