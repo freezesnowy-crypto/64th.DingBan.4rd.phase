@@ -2,7 +2,7 @@
 ﻿<!-- 網頁作者:64期士高丁班 -->
 <!DOCTYPE html>
 
-<html lang="zh-Hant">
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <title>64th丁 第四階段測驗</title>
@@ -5398,6 +5398,31 @@ body:not(.supabase-authenticated) #container{
 </style>
 
 <body>
+<style id="supabase-login-gate-css">
+/* 未登入：只顯示登入畫面；登入成功後才顯示首頁內容 */
+body:not(.supabase-authenticated) > :not(#loginPanel):not(#siteMenu):not(script):not(style) {
+  display: none !important;
+}
+/* 未登入時，功能表仍可使用，但只公開「設定」 */
+body:not(.supabase-authenticated) #siteMenu .site-menu-user,
+body:not(.supabase-authenticated) #siteMenu .site-menu-item:not(#menuSettingsBtn),
+body:not(.supabase-authenticated) #siteMenu #menuAccountPanel,
+body:not(.supabase-authenticated) #siteMenu #menuSubjectsPanel,
+body:not(.supabase-authenticated) #siteMenu #menuRiskPanel,
+body:not(.supabase-authenticated) #siteMenu #menuRankPanel {
+  display: none !important;
+}
+body:not(.supabase-authenticated) #siteMenu #menuSettingsBtn {
+  display: block !important;
+}
+body.supabase-authenticated #loginPanel {
+  display: none !important;
+}
+#loginPanel {
+  position: relative;
+  z-index: 10000;
+}
+</style>
 <div id="siteMenu" class="site-menu" aria-label="功能表">
   <button id="siteMenuToggle" type="button" class="site-menu-toggle" aria-expanded="false" aria-controls="siteMenuPanel">☰</button>
   <div id="siteMenuPanel" class="site-menu-panel" hidden>
@@ -5459,17 +5484,6 @@ body:not(.supabase-authenticated) #container{
           <div class="account-profile-stat-label">連續答對</div>
         </div>
       </div>
-
-      <div class="account-section-title">基本資料</div>
-      <div class="account-setting-row">
-        <label for="accountNameInput">顯示名稱</label>
-        <input id="accountNameInput" type="text" autocomplete="name" placeholder="輸入顯示名稱">
-      </div>
-      <div class="account-setting-row">
-        <label for="accountUsernameInput">帳號</label>
-        <input id="accountUsernameInput" type="text" readonly>
-      </div>
-      <button type="button" class="account-save-btn" id="accountSaveProfileBtn">儲存個人資料</button>
 
       <div class="account-divider"></div>
 
@@ -6933,15 +6947,15 @@ body.v40-night .account-divider{background:#374151;}
     const target=document.getElementById("v40-home-exam-countdown");
     if(!target) return;
     const now=new Date();
-    const exam=new Date(2026,10,7,14,0,0,0);
-    const diff=exam-now;
-    if(diff>0){
-      const totalHours=Math.floor(diff/3600000);
-      const days=Math.floor(totalHours/24);
-      const hours=totalHours%24;
-      target.textContent="📅 第四階段測驗：2026/11/07 14:00　｜　距離測驗還有："+days+"天 "+hours+"小時";
+    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    const exam=new Date(2026,10,7);
+    const days=Math.max(0,Math.ceil((exam-today)/86400000));
+    if(days>0){
+      target.textContent="📅 第四階段測驗：2026/11/07　｜　距離測驗還有："+days+"天";
+    }else if(days===0){
+      target.textContent="📅 第四階段測驗：2026/11/07　｜　今天就是測驗日！";
     }else{
-      target.textContent="📅 第四階段測驗：2026/11/07 14:00　｜　測驗時間已到";
+      target.textContent="📅 第四階段測驗：2026/11/07　｜　測驗已經到了";
     }
   }
   update();
@@ -6968,6 +6982,22 @@ body.v40-night .account-divider{background:#374151;}
   }
 })();
 </script>
+
+<script id="current-user-sync-listener">
+(function(){
+  if(!window.supabaseClient || !supabaseClient.auth) return;
+  supabaseClient.auth.onAuthStateChange(function(event,session){
+    if(event==="SIGNED_IN" && session?.user){
+      questionStatsCurrentUserId=session.user.id;
+      localStorage.setItem("questionStatsCurrentUserId",session.user.id);
+      setTimeout(function(){
+        if(typeof syncCurrentUserDisplay==="function") syncCurrentUserDisplay();
+      },0);
+    }
+  });
+})();
+</script>
+
 <script id="public-settings-controls-js">
 (()=>{
   const storageKey="publicSiteFontSize";
@@ -9014,4 +9044,99 @@ updateButtonDisplay();
 })();
 </script>
 
+
+<style id="online-count-final-force">
+/* 在線人數：強制保留並置於頁面最上層 */
+#online-count{
+  display:block !important;
+  visibility:visible !important;
+  position:fixed !important;
+  top:10px !important;
+  left:10px !important;
+  z-index:2147483647 !important;
+  min-width:118px !important;
+  padding:7px 12px !important;
+  box-sizing:border-box !important;
+  border:1px solid #8ea795 !important;
+  border-radius:10px !important;
+  background:#ffffff !important;
+  color:#17301f !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  line-height:1.25 !important;
+  text-align:center !important;
+  opacity:1 !important;
+  pointer-events:none !important;
+}
+body.v40-night #online-count{
+  background:#111111 !important;
+  color:#f5eee6 !important;
+  border-color:#555555 !important;
+}
+@media(max-width:600px){
+  #online-count{
+    top:8px !important;
+    left:8px !important;
+    min-width:108px !important;
+    padding:6px 9px !important;
+    font-size:13px !important;
+  }
+}
+</style>
+
+<script id="online-count-final-bootstrap">
+(function(){
+  function ensureOnlineCountElement(){
+    var el=document.getElementById("online-count");
+    if(!el){
+      el=document.createElement("div");
+      el.id="online-count";
+      el.setAttribute("aria-live","polite");
+      el.textContent="🟢 在線人數：1";
+      document.body.appendChild(el);
+    }else{
+      el.style.setProperty("display","block","important");
+      el.style.setProperty("visibility","visible","important");
+      el.style.setProperty("z-index","2147483647","important");
+      if(!el.textContent || !el.textContent.trim()){
+        el.textContent="🟢 在線人數：1";
+      }
+    }
+    return el;
+  }
+
+  function patchOnlineScript(){
+    var el=ensureOnlineCountElement();
+    /* 先顯示自己，避免 Supabase 連線尚未完成時整塊消失 */
+    el.textContent="🟢 在線人數：1";
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",patchOnlineScript,{once:true});
+  }else{
+    patchOnlineScript();
+  }
+
+  /* 有些瀏覽器擴充功能會重建 body 子節點，定期確認元素仍存在 */
+  setTimeout(function(){
+    try{ ensureOnlineCountElement(); }catch(e){}
+  },800);
+
+  setTimeout(function(){
+    try{ ensureOnlineCountElement(); }catch(e){}
+  },2000);
+})();
+</script>
+
+<style id="remove-basic-data-final">
+/* 使用者要求：功能表中的「基本資料」及其欄位不顯示 */
+.account-section-title,
+.account-setting-row,
+#accountNameInput,
+#accountUsernameInput,
+#accountSaveProfileBtn,
+#accountSettingsStatus{
+  display:none !important;
+}
+</style>
 </body></html>
