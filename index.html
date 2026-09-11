@@ -2,7 +2,7 @@
 ﻿<!-- 網頁作者:64期士高丁班 -->
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="zh-Hant">
 <head>
 <meta charset="utf-8"/>
 <title>64th丁 第四階段測驗</title>
@@ -3985,22 +3985,7 @@ body.font-normal #container button{font-size:15px!important;}
 body.font-large #container button{font-size:17px!important;}
 </style>
 <style id="public-background-color-final">
-:root{--user-page-bg:#E3EFE5;}
-html.user-custom-bg,
-body.user-custom-bg{
-  background-color:var(--user-page-bg)!important;
-}
-body.user-custom-bg #container{
-  background-color:var(--user-page-bg)!important;
-}
-body.user-custom-bg #container > div:not(.site-menu):not(.marquee-container),
-body.user-custom-bg #container > section,
-body.user-custom-bg #container > main{
-  background-color:var(--user-page-bg)!important;
-}
-body.user-custom-bg .public-background-setting{
-  background:transparent!important;
-}
+/* 自選首頁背景：只允許套用到 homepageAnswerSummary，完全不碰日／夜模式 */
 .bg-color-picker-wrap{
   display:inline-flex!important;align-items:center!important;gap:6px!important;
   padding:6px 9px!important;border:1px solid #a5bca8!important;border-radius:9px!important;
@@ -5362,6 +5347,36 @@ body:not(.supabase-authenticated) #container{
 })();
 </script>
 
+
+<style id="favorites-history-feature-css">
+  #quiz-feature-panel{margin:10px 0;padding:12px;border-radius:12px;border:1px solid #cfd8d2;background:rgba(255,255,255,.72)}
+  #quiz-feature-panel .fh-title{font-weight:800;font-size:18px;margin-bottom:8px}
+  .fh-toolbar{display:flex;flex-wrap:wrap;gap:8px}
+  .fh-toolbar button{border:1px solid #b8c6bc;border-radius:9px;padding:7px 11px;background:#eef4ef;color:#203127;font-weight:700;cursor:pointer}
+  .fh-toolbar button:hover{filter:brightness(.97)}
+  .favorite-btn{margin:0 0 8px 8px;border:1px solid #c9b15a;border-radius:8px;padding:4px 8px;background:#fff8cf;color:#5d4b00;font-weight:700;cursor:pointer;font-size:13px}
+  .favorite-btn.is-favorite{background:#ffe36d;color:#4a3a00}
+  #favoriteHistoryPanel{margin:10px 0}
+  .fh-card{position:relative;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #d6ded8;background:#fff}
+  .fh-remove-wrap{position:absolute;top:8px;right:8px}
+  .fh-remove-wrap button{border:1px solid #c8d2ca;border-radius:8px;padding:4px 8px;cursor:pointer;background:#f2f6f3;font-size:12px}
+  .fh-card .fh-meta{padding-right:92px}
+  .fh-card .fh-meta{font-size:13px;font-weight:700;opacity:.82;margin-bottom:5px}
+  .fh-card .fh-question{line-height:1.5;font-weight:700}
+  .fh-options{margin-top:8px;display:grid;gap:5px}
+  .fh-option{padding:7px 9px;border-radius:7px;background:#f5f8f5;border:1px solid #e0e6e1;line-height:1.45}
+  .fh-option-label{font-weight:800;margin-right:4px}
+  .fh-option-answer{font-weight:700}
+  .fh-correct-mark{margin-left:6px;font-size:12px}
+  body.v40-night #quiz-feature-panel{background:#111 !important;border-color:#444 !important}
+  body.v40-night #quiz-feature-panel .fh-toolbar button{background:#1d1d1d !important;color:#f3eee8 !important;border-color:#555 !important}
+  body.v40-night .favorite-btn{background:#332f16 !important;color:#ffe76b !important;border-color:#806f2c !important}
+  body.v40-night .favorite-btn.is-favorite{background:#5a4c12 !important}
+  body.v40-night .fh-card{background:#151515 !important;border-color:#444 !important;color:#f3eee8 !important}
+  body.v40-night .fh-option{background:#1d1d1d !important;border-color:#444 !important;color:#f3eee8 !important}
+  body.v40-night .fh-remove-wrap button{background:#202020 !important;color:#f3eee8 !important;border-color:#555 !important}
+  @media(max-width:700px){.fh-toolbar button{flex:1 1 140px}.favorite-btn{display:block;margin:4px 0 8px 0}}
+</style>
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -5430,6 +5445,7 @@ body.supabase-authenticated #loginPanel {
     <div id="siteMenuUser" class="site-menu-user"></div>
     <button type="button" class="site-menu-item" id="menuSubjectsBtn">📚 各科狀況</button>
     <button type="button" class="site-menu-item" id="menuRiskBtn">⚠️ 錯題</button>
+    <button type="button" class="site-menu-item" id="menuFavoritesBtn">⭐ 錯題收藏</button>
     
     <button type="button" class="site-menu-item" id="menuSettingsBtn">🎨 背景設定</button>
 <button type="button" class="site-menu-item" id="menuThemeBtn">🌙 日／夜模式</button> <button type="button" class="site-menu-item" id="menuResetBtn">↻ 重置紀錄</button>
@@ -5444,22 +5460,6 @@ body.supabase-authenticated #loginPanel {
           <button type="button" class="site-setting-choice" id="fontLargeBtn">A 大</button>
         </div>
       </div>
-
-      <div class="site-menu-settings-row public-background-setting">
-        <strong>背景顏色</strong>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px">
-          <label class="bg-color-picker-wrap">
-            <input id="backgroundColorPicker" type="color" value="#E3EFE5" aria-label="選擇背景顏色">
-            <span>🎨 自選</span>
-          </label>
-          <button type="button" class="site-setting-choice bg-preset" data-bg="#E3EFE5">淡綠</button>
-          <button type="button" class="site-setting-choice bg-preset" data-bg="#E5EEF5">淡藍</button>
-          <button type="button" class="site-setting-choice bg-preset" data-bg="#F3EDE2">米白</button>
-          <button type="button" class="site-setting-choice bg-preset" data-bg="#EEE8F4">淡紫</button>
-          <button type="button" class="site-setting-choice" id="backgroundResetBtn">恢復預設</button>
-        </div>
-      </div>
-
       <div class="site-menu-settings-row">
         <strong>網站資訊</strong>
         <div style="margin-top:5px">第四階段測驗：2026/11/07</div>
@@ -6450,24 +6450,7 @@ function showLockMessage(score) {
   update(); setInterval(update,60000);
 })();
 </script>
-<script id="supabase-online-presence">
-(function(){
-const U="https://rmodlesfzcmuvittujhc.supabase.co",K="sb_publishable_xnvJrBdhqUS7sfszSo_Pzw_5sHGAlro",C="64ding-online-users";
-const show=x=>{const e=document.getElementById("online-count");if(e)e.textContent=x};
-let key=localStorage.getItem("64ding_online_device_key");
-if(!key){key=(crypto.randomUUID?crypto.randomUUID():"device-"+Date.now()+"-"+Math.random());localStorage.setItem("64ding_online_device_key",key)}
-function start(){
- if(!window.supabase||!window.supabase.createClient){show("🟡 在線人數：無法連線");return}
- const client=window.supabase.createClient(U,K);
- const ch=client.channel(C,{config:{presence:{key:key}}});
- const update=()=>show("🟢 在線人數："+Object.keys(ch.presenceState()).filter(Boolean).length);
- ch.on("presence",{event:"sync"},update).on("presence",{event:"join"},update).on("presence",{event:"leave"},update)
- .subscribe(async s=>{if(s==="SUBSCRIBED"){const {error}=await ch.track({device:key,online_at:new Date().toISOString()});if(error)show("🟡 在線人數：連線異常")}else if(["CHANNEL_ERROR","TIMED_OUT","CLOSED"].includes(s))show("🟡 在線人數：連線中斷")});
- window.addEventListener("pagehide",()=>{try{ch.untrack()}catch(e){}try{client.removeChannel(ch)}catch(e){}},{once:true});
-}
-document.readyState==="loading"?document.addEventListener("DOMContentLoaded",start,{once:true}):start();
-})();
-</script>
+
 
 <style id="v40-font-center-adjust">
 /* 4.0V：自選科目按鈕置中、內文字體與按鈕整體略縮小 */
@@ -6744,6 +6727,13 @@ body.v40-night .account-divider{background:#374151;}
       openStatsSection("stats-detail-risk");
     });
 
+    document.getElementById("menuFavoritesBtn")?.addEventListener("click",()=>{
+      document.getElementById("favoriteHistoryPanel")?.remove();
+      const box=document.createElement("div"); box.id="favoriteHistoryPanel"; box.dataset.mode="favorites";
+      const host=document.getElementById("container"); if(host) host.prepend(box);
+      openFavoritesHistory("favorites");
+      openPanel(false);
+    });
     document.getElementById("menuRankBtn")?.addEventListener("click",()=>{
       document.getElementById("menuAccountPanel")?.setAttribute("hidden","");
       openPanel(false);
@@ -6890,6 +6880,7 @@ body.v40-night .account-divider{background:#374151;}
 
     document.getElementById("accountResetStatsBtn")?.addEventListener("click",async()=>{
       if(typeof resetErrorStats === "function") await resetErrorStats();
+      localStorage.removeItem(FAVORITES_KEY);
     });
 
     document.getElementById("accountSignOutBtn")?.addEventListener("click",async()=>{
@@ -7047,20 +7038,15 @@ document.addEventListener("DOMContentLoaded",()=>{
 
   function applyBackground(value,save=true){
     const c=normalizeColor(value);
-    document.documentElement.classList.add("user-custom-bg");
-    document.body.classList.add("user-custom-bg");
-    document.documentElement.style.setProperty("--user-page-bg",c);
-    document.body.style.setProperty("--user-page-bg",c);
-    document.documentElement.style.setProperty("background-color",c,"important");
-    document.body.style.setProperty("background-color",c,"important");
+    const summary=document.getElementById("homepageAnswerSummary");
 
-    // 直接套用到主要頁面容器，確保畫面立刻可見。
-    ["#container"].forEach(sel=>{
-      document.querySelectorAll(sel).forEach(el=>{
-        el.style.setProperty("background-color",c,"important");
-      });
-    });
+    /* 自選顏色：只允許套用到首頁「homepageAnswerSummary」 */
+    if(summary){
+      summary.style.setProperty("background-color",c,"important");
+      summary.style.setProperty("background",c,"important");
+    }
 
+    /* 不再修改 html / body / #container / 其他區塊 */
     const picker=document.getElementById("backgroundColorPicker");
     if(picker) picker.value=c;
     if(save) localStorage.setItem(STORAGE_KEY,c);
@@ -7068,7 +7054,15 @@ document.addEventListener("DOMContentLoaded",()=>{
 
   function resetBackground(){
     localStorage.removeItem(STORAGE_KEY);
-    applyBackground(DEFAULT,false);
+    const summary=document.getElementById("homepageAnswerSummary");
+    if(summary){
+      summary.style.removeProperty("background");
+      summary.style.removeProperty("background-color");
+      summary.style.removeProperty("--homepage-summary-bg");
+      summary.classList.remove("user-summary-custom-bg");
+    }
+    const picker=document.getElementById("backgroundColorPicker");
+    if(picker) picker.value=DEFAULT;
   }
 
   function bind(){
@@ -7092,6 +7086,7 @@ document.addEventListener("DOMContentLoaded",()=>{
         applyBackground(preset.dataset.bg,true);
         return;
       }
+
       if(e.target.closest("#backgroundResetBtn")){
         e.preventDefault();
         e.stopPropagation();
@@ -7099,7 +7094,9 @@ document.addEventListener("DOMContentLoaded",()=>{
       }
     });
 
-    applyBackground(localStorage.getItem(STORAGE_KEY)||DEFAULT,false);
+    const saved=localStorage.getItem(STORAGE_KEY);
+    if(saved) applyBackground(saved,false);
+    else applyBackground(DEFAULT,false);
   }
 
   if(document.readyState==="loading"){
@@ -7575,6 +7572,81 @@ document.addEventListener("DOMContentLoaded",()=>{
     function getQuestionStatsStorageKey() {
         const userId = questionStatsCurrentUserId || localStorage.getItem("questionStatsCurrentUserId");
         return userId ? "questionErrorStats_" + userId : "questionErrorStats_guest";
+    }
+
+    // ===== 錯題收藏 + 答題歷史 =====
+    const FAVORITES_KEY = "64ding_question_favorites_v1";
+
+    function cleanQuestionText(text){
+        return String(text || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+    }
+    function questionKey(question, type){
+        const subject = question?.__subject || "其他科目";
+        return subject + "||" + (type || "") + "||" + cleanQuestionText(question?.["題目"]);
+    }
+    function getFavorites(){
+        try{return JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]");}catch(e){return [];}
+    }
+    function saveFavorites(arr){localStorage.setItem(FAVORITES_KEY, JSON.stringify(arr.slice(0,300)));}
+    function isFavorite(question,type){return getFavorites().some(x=>x.key===questionKey(question,type));}
+    function toggleFavorite(question,type){
+        const key=questionKey(question,type);
+        const arr=getFavorites();
+        const idx=arr.findIndex(x=>x.key===key);
+        if(idx>=0){arr.splice(idx,1);}else{
+            arr.unshift({key,subject:question.__subject||"其他科目",type:type||"",question:cleanQuestionText(question["題目"]),options:Array.isArray(question["選項"])?question["選項"].slice():[],answer:Array.isArray(question["答案"])?question["答案"].slice():(question["答案"]??""),savedAt:new Date().toISOString()});
+        }
+        saveFavorites(arr); updateFavoriteButtons(); renderFavoritesPanel();
+    }
+    function addFavoriteButton(parent,question,type){
+        const b=document.createElement("button"); b.type="button"; b.className="favorite-btn";
+        b.dataset.favKey=questionKey(question,type);
+        b.textContent=isFavorite(question,type)?"★ 已收藏":"☆ 收藏";
+        if(isFavorite(question,type)) b.classList.add("is-favorite");
+        b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();toggleFavorite(question,type);});
+        parent.appendChild(b);
+    }
+    function updateFavoriteButtons(){
+        const favs=getFavorites().reduce((m,x)=>(m[x.key]=1,m),{});
+        document.querySelectorAll('.favorite-btn').forEach(b=>{
+            const on=!!favs[b.dataset.favKey]; b.classList.toggle('is-favorite',on); b.textContent=on?'★ 已收藏':'☆ 收藏';
+        });
+    }
+    function renderFavoritesPanel(){
+        const panel=document.getElementById('favoriteHistoryPanel'); if(!panel)return;
+        const arr=getFavorites();
+        const title='⭐ 錯題收藏';
+        let html='<div class="fh-title">'+title+'（'+arr.length+'）</div>';
+        if(!arr.length){html+='<div style="opacity:.7">目前沒有收藏到選項。</div>'; panel.innerHTML=html; return;}
+        html+='<div>';
+        arr.slice(0,100).forEach((x,i)=>{
+          const time=x.time||x.savedAt;
+          const t=time?new Date(time).toLocaleString('zh-TW'):'';
+          html+='<div class="fh-card">';
+          html+='<div class="fh-remove-wrap"><button type="button" data-unfav="'+i+'">移除收藏</button></div>';
+          html+='<div class="fh-meta">'+(x.subject||'其他科目')+'｜'+(x.type||'題目')+(t?'｜'+t:'')+'</div>';
+          html+='<div class="fh-question">'+escapeHtml(x.question||'')+'</div>';
+          const opts=Array.isArray(x.options)?x.options:[];
+          if(opts.length){
+            html+='<div class="fh-options">';
+            opts.forEach((op,j)=>{
+              const isAns=Array.isArray(x.answer)?x.answer.some(a=>String(a)===String(op)||String(a)===String(j+1)||String(a)===String.fromCharCode(65+j)):String(x.answer||'')===String(op);
+              html+='<div class="fh-option'+(isAns?' fh-option-answer':'')+'"><span class="fh-option-label">'+String.fromCharCode(65+j)+'.</span> '+escapeHtml(op)+(isAns?' <span class="fh-correct-mark">✓ 正確答案</span>':'')+'</div>';
+            });
+            html+='</div>';
+          }
+          html+='</div>';
+        });
+        html+='</div>'; panel.innerHTML=html;
+        panel.querySelectorAll('[data-unfav]').forEach(btn=>btn.addEventListener('click',()=>{
+          const idx=Number(btn.dataset.unfav); const f=getFavorites(); f.splice(idx,1); saveFavorites(f); renderFavoritesPanel(); updateFavoriteButtons();
+        }));
+    }
+    function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));}
+    function openFavoritesHistory(mode){
+        const box=document.getElementById('favoriteHistoryPanel'); if(!box)return;
+        box.dataset.mode='favorites'; box.style.display='block'; renderFavoritesPanel();
+        box.scrollIntoView({behavior:'smooth',block:'start'});
     }
 
     function getErrorStats() {
@@ -8500,6 +8572,7 @@ const colorMap = {
 	    labelc.for="sc"+i;
 	    labelc.className="cwLabel";
             td3.appendChild(labelc);
+            addFavoriteButton(td3, questions["是非"][i], "是非題");
             //題目
         }
         //是非題
@@ -8582,6 +8655,7 @@ const colorMap = {
                 label.className = "optionLabel"
                 td3.appendChild(label);
             }
+            addFavoriteButton(td3, questions["單選"][i], "單選題");
             //題目&選項
         }
         //單選題
@@ -8664,6 +8738,7 @@ const colorMap = {
                 label.className = "optionLabel"
                 td3.appendChild(label);
             }
+            addFavoriteButton(td3, questions["複選"][i], "複選題");
             //題目&選項
         }
         //複選題
@@ -8747,7 +8822,8 @@ const colorMap = {
                 document.getElementById("cr" + i).className = "incorrectRow";
 		cIncorrect++;
             }
-            recordQuestionResult(questions["是非"][i], document.getElementById("cr" + i).className === "correctRow", "是非題");
+            const tfCorrect = document.getElementById("cr" + i).className === "correctRow";
+            recordQuestionResult(questions["是非"][i], tfCorrect, "是非題");
         }
         //是非結算
 
@@ -8765,7 +8841,8 @@ const colorMap = {
                 document.getElementById("sr" + i).className = "incorrectRow";
 		sIncorrect++;
             }
-            recordQuestionResult(questions["單選"][i], document.getElementById("sr" + i).className === "correctRow", "單選題");
+            const sCorrect = document.getElementById("sr" + i).className === "correctRow";
+            recordQuestionResult(questions["單選"][i], sCorrect, "單選題");
         }
         //單選結算
 
@@ -8794,7 +8871,8 @@ const colorMap = {
                 document.getElementById("mr" + i).className = "incorrectRow";
 		mIncorrect++;
             }
-            recordQuestionResult(questions["複選"][i], document.getElementById("mr" + i).className === "correctRow", "複選題");
+            const mCorrect = document.getElementById("mr" + i).className === "correctRow";
+            recordQuestionResult(questions["複選"][i], mCorrect, "複選題");
         }
         //複選結算
 
@@ -9139,4 +9217,331 @@ body.v40-night #online-count{
   display:none !important;
 }
 </style>
+
+<style id="online-count-auto-reconnect">
+#online-count{
+  position:fixed !important;
+  top:10px !important;
+  left:10px !important;
+  z-index:2147483647 !important;
+  display:block !important;
+  visibility:visible !important;
+  min-width:118px !important;
+  padding:7px 12px !important;
+  box-sizing:border-box !important;
+  border:1px solid #8ea795 !important;
+  border-radius:10px !important;
+  background:#fff !important;
+  color:#17301f !important;
+  box-shadow:0 2px 10px rgba(0,0,0,.18) !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  line-height:1.25 !important;
+  text-align:center !important;
+  pointer-events:none !important;
+}
+body.v40-night #online-count{
+  background:#111 !important;
+  color:#f5eee6 !important;
+  border-color:#555 !important;
+}
+@media(max-width:600px){
+  #online-count{
+    top:8px !important;
+    left:8px !important;
+    min-width:108px !important;
+    padding:6px 9px !important;
+    font-size:13px !important;
+  }
+}
+</style>
+
+<script id="supabase-online-presence">
+(function(){
+  const CHANNEL_NAME = "64ding-online-users";
+  const el = () => document.getElementById("online-count");
+  let channel = null;
+  let reconnectTimer = null;
+  let reconnectDelay = 2000;
+  let destroyed = false;
+  let started = false;
+  const deviceKey = localStorage.getItem("64ding_online_device_key") ||
+    ((crypto && crypto.randomUUID) ? crypto.randomUUID() :
+      "device-" + Date.now() + "-" + Math.random().toString(36).slice(2));
+
+  localStorage.setItem("64ding_online_device_key", deviceKey);
+
+  function show(text){
+    const e = el();
+    if(e){
+      e.textContent = text;
+      e.style.setProperty("display","block","important");
+      e.style.setProperty("visibility","visible","important");
+    }
+  }
+
+  function showFallback(){
+    // 即使 Realtime 暫時重連，也不讓首頁顯示成「不存在在線人數」。
+    // 這裡代表「目前至少包含本機這一個瀏覽器」。
+    show("🟢 在線人數：1");
+  }
+
+  function countPresence(){
+    try{
+      if(!channel) return 1;
+      const state = channel.presenceState() || {};
+      return Math.max(1, Object.keys(state).length);
+    }catch(e){
+      return 1;
+    }
+  }
+
+  function update(){
+    show("🟢 在線人數：" + countPresence());
+  }
+
+  function scheduleReconnect(){
+    if(destroyed || reconnectTimer) return;
+    showFallback();
+    reconnectTimer = setTimeout(function(){
+      reconnectTimer = null;
+      connect();
+    }, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 1.7, 30000);
+  }
+
+  async function connect(){
+    if(destroyed || !window.supabase || !window.supabase.createClient){
+      showFallback();
+      return;
+    }
+
+    try{
+      if(channel){
+        try{
+          await channel.unsubscribe();
+        }catch(e){}
+        channel = null;
+      }
+
+      // 直接使用現有的 Supabase client，避免頁面建立第二組 Auth/WebSocket client。
+      const client = window.supabaseClient || window.supabase.createClient(
+        "https://rmodlesfzcmuvittujhc.supabase.co",
+        "sb_publishable_xnvJrBdhqUS7sfszSo_Pzw_5sHGAlro"
+      );
+
+      channel = client.channel(CHANNEL_NAME, {
+        config:{ presence:{ key:deviceKey } }
+      });
+
+      channel
+        .on("presence", {event:"sync"}, update)
+        .on("presence", {event:"join"}, update)
+        .on("presence", {event:"leave"}, update)
+        .subscribe(async function(status){
+          if(status === "SUBSCRIBED"){
+            reconnectDelay = 2000;
+            try{
+              const result = await channel.track({
+                device: deviceKey,
+                online_at: new Date().toISOString()
+              });
+              if(result && result.error){
+                console.warn("在線人數 track 失敗：", result.error);
+                showFallback();
+                scheduleReconnect();
+              }else{
+                update();
+              }
+            }catch(e){
+              console.warn("在線人數 track 例外：", e);
+              showFallback();
+              scheduleReconnect();
+            }
+          }else if(
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ){
+            console.warn("在線人數頻道狀態：", status);
+            showFallback();
+            scheduleReconnect();
+          }
+        });
+
+      // 避免長時間卡在「連線中」卻沒有回報狀態。
+      setTimeout(function(){
+        if(channel){
+          const txt = el() ? el().textContent : "";
+          if(txt.indexOf("連線中") >= 0){
+            showFallback();
+            scheduleReconnect();
+          }
+        }
+      }, 12000);
+
+    }catch(e){
+      console.warn("在線人數連線失敗：", e);
+      showFallback();
+      scheduleReconnect();
+    }
+  }
+
+  function start(){
+    if(started) return;
+    started = true;
+    showFallback();
+    connect();
+  }
+
+  window.addEventListener("online", function(){
+    reconnectDelay = 2000;
+    scheduleReconnect();
+  });
+
+  window.addEventListener("pagehide", function(){
+    destroyed = true;
+    if(reconnectTimer) clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+    try{
+      if(channel) channel.unsubscribe();
+    }catch(e){}
+  }, {once:true});
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", start, {once:true});
+  }else{
+    start();
+  }
+})();
+</script>
+
+<style id="background-settings-position-final">
+/* ===== 自選背景設定：固定在「☰ → 🎨 背景設定」下方 ===== */
+#siteMenu{
+  position:fixed !important;
+  top:14px !important;
+  right:14px !important;
+  z-index:2147483640 !important;
+}
+#siteMenuPanel{
+  position:absolute !important;
+  top:54px !important;
+  right:0 !important;
+  width:min(330px,calc(100vw - 28px)) !important;
+  max-height:calc(100vh - 80px) !important;
+  overflow-y:auto !important;
+  box-sizing:border-box !important;
+}
+#menuSettingsPanel{
+  position:relative !important;
+  top:auto !important;
+  right:auto !important;
+  width:100% !important;
+  max-width:none !important;
+  margin-top:8px !important;
+  box-sizing:border-box !important;
+}
+#menuSettingsPanel .public-background-setting{
+  position:relative !important;
+  display:block !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+#menuSettingsPanel .public-background-setting > div{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:7px !important;
+  flex-wrap:wrap !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+#menuSettingsPanel .bg-color-picker-wrap{
+  position:relative !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  flex:0 0 auto !important;
+  width:auto !important;
+  box-sizing:border-box !important;
+}
+#menuSettingsPanel #backgroundColorPicker{
+  position:relative !important;
+  display:block !important;
+  width:28px !important;
+  height:28px !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+#menuSettingsPanel .site-setting-choice{
+  flex:0 0 auto !important;
+}
+@media(max-width:600px){
+  #siteMenu{
+    top:9px !important;
+    right:9px !important;
+  }
+  #siteMenuPanel{
+    top:49px !important;
+    width:min(330px,calc(100vw - 18px)) !important;
+    max-height:calc(100vh - 65px) !important;
+  }
+}
+</style>
+
+<style id="background-summary-only-final">
+/* ===== 自選背景：只允許改變 homepageAnswerSummary ===== */
+#homepageAnswerSummary.user-summary-custom-bg{
+  background-color:var(--homepage-summary-bg) !important;
+}
+
+/* 自選顏色本身只能由 JS 寫入摘要區；不覆寫 html / body / #container 的日夜模式背景 */
+</style>
+<script id="background-summary-only-class-sync">
+(function(){
+  function syncSummary(){
+    var summary=document.getElementById("homepageAnswerSummary");
+    if(!summary) return;
+    var c=localStorage.getItem("publicBackgroundColor");
+    if(/^#[0-9a-fA-F]{6}$/.test(c||"")){
+      summary.style.setProperty("--homepage-summary-bg",c);
+      summary.style.setProperty("background-color",c,"important");
+    }
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",syncSummary,{once:true});
+  }else{
+    syncSummary();
+  }
+})();
+</script>
+
+<style id="remove-custom-bg-and-password-final">
+/* 使用者要求：移除修改密碼與首頁自選顏色 */
+#accountChangePasswordBtn, #accountNewPasswordInput, #accountConfirmPasswordInput,
+#backgroundColorPicker, #backgroundResetBtn, .bg-color-picker-wrap, .bg-preset,
+#menuSettingsPanel .public-background-setting{display:none !important;}
+</style>
+<script id="remove-custom-bg-and-password-js">
+(function(){
+  function remove(){
+    var ids=["accountChangePasswordBtn","accountNewPasswordInput","accountConfirmPasswordInput","backgroundColorPicker","backgroundResetBtn"];
+    ids.forEach(function(id){var el=document.getElementById(id); if(el) el.remove();});
+    document.querySelectorAll(".bg-color-picker-wrap,.bg-preset,.public-background-setting").forEach(function(el){el.remove();});
+    document.querySelectorAll("button,a,div,span,strong,label").forEach(function(el){
+      var t=(el.textContent||"").replace(/\s+/g,"").trim();
+      if(t==="修改密碼" || t==="背景顏色" || t==="🎨自選" || t==="淡綠" || t==="淡藍" || t==="米白" || t==="淡紫" || t==="恢復預設") {
+        var row=el.closest(".account-divider, .account-setting-row, .site-menu-settings-row");
+        if(row) row.remove(); else el.remove();
+      }
+    });
+  }
+  document.addEventListener("DOMContentLoaded",remove);
+  window.addEventListener("load",remove);
+  setTimeout(remove,300); setTimeout(remove,1200);
+})();
+</script>
+
 </body></html>
+
+<style id="remove-custom-background-final">#backgroundColorPicker,.public-background-setting,.bg-preset,#backgroundResetBtn,.bg-color-picker-wrap{display:none!important}</style>
