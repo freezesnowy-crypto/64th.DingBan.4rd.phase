@@ -41,6 +41,7 @@ async function checkLogin(){
   }
 }
 </script>
+<!-- v20: 累計使用／今日回訪改由 Supabase RPC record_site_visit 自動統計 -->
 <style id="homepage-mode-row-bg">
 /* 首頁「科目／刷題模式／測驗模式」三個區塊，跟隨首頁日夜模式背景 */
 body.v40-night .home-subject-row,
@@ -5763,33 +5764,24 @@ body.v40-night #v40-home-exam-countdown{
 })();
 </script>
 
-<script id="site-visitors-tracker">
+<script id="site-visitors-tracker-v20">
 (function(){
-  const TABLE = 'site_visitors';
   const DEVICE_KEY_NAME = '64ding_site_visitor_key';
   const client = window.supabaseClient;
 
   function getDeviceKey(){
-    let key = localStorage.getItem(DEVICE_KEY_NAME);
-    if(!key){
-      key = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dv-' + Date.now() + '-' + Math.random().toString(36).slice(2));
-      localStorage.setItem(DEVICE_KEY_NAME, key);
+    try{
+      let key = localStorage.getItem(DEVICE_KEY_NAME);
+      if(!key){
+        key = (window.crypto && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : ('dv-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+        localStorage.setItem(DEVICE_KEY_NAME, key);
+      }
+      return key;
+    }catch(err){
+      return 'dv-' + Date.now() + '-' + Math.random().toString(36).slice(2);
     }
-    return key;
-  }
-
-  function localDateString(){
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
-  }
-
-  function localStartIso(){
-    const d = new Date();
-    d.setHours(0,0,0,0);
-    return d.toISOString();
   }
 
   function setValue(id, value){
@@ -5797,69 +5789,34 @@ body.v40-night #v40-home-exam-countdown{
     if(el) el.textContent = `${Number(value || 0).toLocaleString('zh-TW')} 人`;
   }
 
-  async function refreshCounts(){
-    if(!client) return;
-    const today = localDateString();
-    const startIso = localStartIso();
-    try{
-      const total = await client.from(TABLE).select('device_key', {count:'exact', head:true});
-      if(total.error) throw total.error;
-      setValue('visitor-total-value', total.count || 0);
-
-      const returning = await client.from(TABLE)
-        .select('device_key', {count:'exact', head:true})
-        .eq('last_seen_date', today)
-        .lt('first_seen', startIso);
-      if(returning.error) throw returning.error;
-      setValue('visitor-returning-value', returning.count || 0);
-    }catch(err){
-      console.warn('[site_visitors]', err);
-    }
-  }
-
   async function trackVisitor(){
     if(!client) return;
     const key = getDeviceKey();
-    const today = localDateString();
     try{
-      const existing = await client.from(TABLE)
-        .select('device_key, first_seen')
-        .eq('device_key', key)
-        .maybeSingle();
-      if(existing.error) throw existing.error;
+      const { data, error } = await client.rpc('record_site_visit', {
+        p_device_key: key
+      });
+      if(error) throw error;
 
-      const payload = {
-        device_key: key,
-        last_seen: new Date().toISOString(),
-        last_seen_date: today
-      };
-      if(!existing.data){
-        // first_seen 交給資料庫 default now() 建立；不會因回訪而被重設。
+      if(data){
+        setValue('visitor-total-value', data.total_users);
+        setValue('visitor-returning-value', data.today_returning);
       }
-      const saved = await client.from(TABLE).upsert(payload, {onConflict:'device_key'});
-      if(saved.error) throw saved.error;
-      await refreshCounts();
     }catch(err){
-      console.warn('[site_visitors]', err);
-      await refreshCounts();
+      console.warn('[site_visitors v20]', err);
     }
   }
 
   function boot(){
     setTimeout(trackVisitor, 700);
-    setInterval(function(){
-      const nowKey = localDateString();
-      if(window.__64dingVisitorLastDate !== nowKey){
-        window.__64dingVisitorLastDate = nowKey;
-        trackVisitor();
-      }else{
-        refreshCounts();
-      }
-    }, 60000);
+    setInterval(trackVisitor, 60000);
   }
 
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true});
-  else boot();
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', boot, {once:true});
+  }else{
+    boot();
+  }
 })();
 </script>
 
