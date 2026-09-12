@@ -9485,34 +9485,30 @@ updateButtonDisplay();
   const el = () => document.getElementById("online-count");
   let channel = null;
   let reconnectTimer = null;
-  let reconnectDelay = 2000;
+  let clientWaitTimer = null;
+  let reconnectDelay = 1500;
   let destroyed = false;
   let started = false;
-  const deviceKey = localStorage.getItem("64ding_online_device_key") ||
-    ((crypto && crypto.randomUUID) ? crypto.randomUUID() :
-      "device-" + Date.now() + "-" + Math.random().toString(36).slice(2));
+  let connected = false;
 
-  localStorage.setItem("64ding_online_device_key", deviceKey);
+  // 在線人數採「分頁/工作階段」計算：每次開啟一個頁面都產生獨立 UUID，
+  // 因此同一台電腦同時開多個分頁也能正確反映即時在線連線數。
+  const presenceKey = (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : "tab-" + Date.now() + "-" + Math.random().toString(36).slice(2);
 
-  function show(text){
+  function showNumber(n){
     const e = el();
-    if(e){
-      const m = String(text || "").match(/(\d+)/);
-      e.textContent = "🟢 在線人數：" + (m ? m[1] : "1");
-      e.style.setProperty("display","block","important");
-      e.style.setProperty("visibility","visible","important");
-    }
-  }
-
-  function showFallback(){
-    // 即使 Realtime 暫時重連，也不讓首頁顯示成「不存在在線人數」。
-    // 這裡代表「目前至少包含本機這一個瀏覽器」。
-    show("🟢 在線人數：1");
+    if(!e) return;
+    const num = Math.max(1, Number(n) || 1);
+    e.textContent = "🟢 在線人數：" + num;
+    e.style.setProperty("display","block","important");
+    e.style.setProperty("visibility","visible","important");
   }
 
   function countPresence(){
     try{
-      if(!channel) return 1;
+      if(!channel || !connected) return 1;
       const state = channel.presenceState() || {};
       return Math.max(1, Object.keys(state).length);
     }catch(e){
@@ -9520,93 +9516,87 @@ updateButtonDisplay();
     }
   }
 
-  function update(){
-    show("🟢 在線人數：" + countPresence());
+  function updateCount(){
+    showNumber(countPresence());
   }
 
   function scheduleReconnect(){
     if(destroyed || reconnectTimer) return;
-    showFallback();
+    connected = false;
+    showNumber(1);
     reconnectTimer = setTimeout(function(){
       reconnectTimer = null;
       connect();
     }, reconnectDelay);
-    reconnectDelay = Math.min(reconnectDelay * 1.7, 30000);
+    reconnectDelay = Math.min(Math.round(reconnectDelay * 1.7), 15000);
+  }
+
+  function waitForClient(){
+    if(destroyed || window.supabaseClient) {
+      if(clientWaitTimer){ clearTimeout(clientWaitTimer); clientWaitTimer=null; }
+      connect();
+      return;
+    }
+    clientWaitTimer = setTimeout(waitForClient, 400);
   }
 
   async function connect(){
-    if(destroyed || !window.supabase || !window.supabase.createClient){
-      showFallback();
+    if(destroyed) return;
+    const client = window.supabaseClient ||
+      (window.supabase && window.supabase.createClient ? window.supabase.createClient(
+        "https://rmodlesfzcmuvittujhc.supabase.co",
+        "sb_publishable_xnvJrBdhqUS7sfszSo_Pzw_5sHGAlro"
+      ) : null);
+
+    if(!client){
+      showNumber(1);
+      waitForClient();
       return;
     }
 
     try{
+      connected = false;
       if(channel){
-        try{
-          await channel.unsubscribe();
-        }catch(e){}
+        try{ await channel.unsubscribe(); }catch(e){}
         channel = null;
       }
 
-      // 直接使用現有的 Supabase client，避免頁面建立第二組 Auth/WebSocket client。
-      const client = window.supabaseClient || window.supabase.createClient(
-        "https://rmodlesfzcmuvittujhc.supabase.co",
-        "sb_publishable_xnvJrBdhqUS7sfszSo_Pzw_5sHGAlro"
-      );
-
       channel = client.channel(CHANNEL_NAME, {
-        config:{ presence:{ key:deviceKey } }
+        config:{ presence:{ key: presenceKey } }
       });
 
       channel
-        .on("presence", {event:"sync"}, update)
-        .on("presence", {event:"join"}, update)
-        .on("presence", {event:"leave"}, update)
+        .on("presence", {event:"sync"}, updateCount)
+        .on("presence", {event:"join"}, updateCount)
+        .on("presence", {event:"leave"}, updateCount)
         .subscribe(async function(status){
-          if(status === "SUBSCRIBED"){
-            reconnectDelay = 2000;
+          if(status === "SUBSCRIBED") {
+            connected = true;
+            reconnectDelay = 1500;
             try{
               const result = await channel.track({
-                device: deviceKey,
+                session_key: presenceKey,
                 online_at: new Date().toISOString()
               });
               if(result && result.error){
                 console.warn("在線人數 track 失敗：", result.error);
-                showFallback();
                 scheduleReconnect();
               }else{
-                update();
+                // 等 Realtime 同步完成後再讀 presence 狀態。
+                setTimeout(updateCount, 100);
               }
             }catch(e){
               console.warn("在線人數 track 例外：", e);
-              showFallback();
               scheduleReconnect();
             }
-          }else if(
-            status === "CHANNEL_ERROR" ||
-            status === "TIMED_OUT" ||
-            status === "CLOSED"
-          ){
+          } else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
             console.warn("在線人數頻道狀態：", status);
-            showFallback();
             scheduleReconnect();
           }
         });
 
-      // 避免長時間卡在「連線中」卻沒有回報狀態。
-      setTimeout(function(){
-        if(channel){
-          const txt = el() ? el().textContent : "";
-          if(txt.indexOf("連線中") >= 0){
-            showFallback();
-            scheduleReconnect();
-          }
-        }
-      }, 12000);
-
     }catch(e){
       console.warn("在線人數連線失敗：", e);
-      showFallback();
       scheduleReconnect();
     }
   }
@@ -9614,27 +9604,28 @@ updateButtonDisplay();
   function start(){
     if(started) return;
     started = true;
-    showFallback();
-    connect();
+    showNumber(1);
+    waitForClient();
   }
 
   window.addEventListener("online", function(){
-    reconnectDelay = 2000;
+    reconnectDelay = 1500;
     scheduleReconnect();
   });
 
   window.addEventListener("pagehide", function(){
     destroyed = true;
+    connected = false;
     if(reconnectTimer) clearTimeout(reconnectTimer);
+    if(clientWaitTimer) clearTimeout(clientWaitTimer);
     reconnectTimer = null;
-    try{
-      if(channel) channel.unsubscribe();
-    }catch(e){}
+    clientWaitTimer = null;
+    try{ if(channel) channel.unsubscribe(); }catch(e){}
   }, {once:true});
 
-  if(document.readyState === "loading"){
+  if(document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start, {once:true});
-  }else{
+  } else {
     start();
   }
 })();
@@ -9901,6 +9892,27 @@ updateButtonDisplay();
   document.addEventListener('DOMContentLoaded',ensureOnlineRealtime);
   window.addEventListener('load',ensureOnlineRealtime);
   setTimeout(ensureOnlineRealtime,300);
+})();
+</script>
+
+<style id="online-count-v21-final">
+#online-count{display:block !important;visibility:visible !important;}
+</style>
+<script id="online-count-v21-final-guard">
+(function(){
+  function ensure(){
+    var e=document.getElementById('online-count');
+    if(!e){
+      e=document.createElement('div');
+      e.id='online-count';
+      document.body.appendChild(e);
+    }
+    e.style.setProperty('display','block','important');
+    e.style.setProperty('visibility','visible','important');
+    if(!e.textContent || !e.textContent.trim()) e.textContent='🟢 在線人數：1';
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ensure,{once:true});
+  else ensure();
 })();
 </script>
 </body></html>
