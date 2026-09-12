@@ -5595,7 +5595,7 @@ body.supabase-authenticated #loginPanel {
     <button type="button" class="site-menu-item" id="menuRiskBtn">⚠️ 錯題</button>
     <button type="button" class="site-menu-item" id="menuFavoritesBtn">⭐ 錯題收藏</button>
     
-    <button type="button" class="site-menu-item" id="menuSettingsBtn">🎨 背景設定</button>
+    <button type="button" class="site-menu-item" id="menuSettingsBtn">🔤 字體大小</button>
 <button type="button" class="site-menu-item" id="menuThemeBtn">🌙 日／夜模式</button> <button type="button" class="site-menu-item" id="menuResetBtn">↻ 重置紀錄</button>
     <div id="menuSettingsPanel" class="site-menu-settings" hidden>
       <div class="site-menu-settings-title">⚙️ 設定</div>
@@ -5651,7 +5651,6 @@ body.supabase-authenticated #loginPanel {
       <button type="button" class="account-save-btn" id="accountChangePasswordBtn">修改密碼</button>
 
       <div class="account-divider"></div>
-      <button type="button" class="account-reset-btn" id="accountResetStatsBtn">↻ 重置紀錄</button>
       <div id="accountSettingsStatus" class="account-settings-status" aria-live="polite"></div>
     </div>
   </div>
@@ -7219,11 +7218,6 @@ body.v40-night .account-divider{background:#374151;}
       await loadAccountCard();
     });
 
-
-    document.getElementById("accountResetStatsBtn")?.addEventListener("click",async()=>{
-      if(typeof resetErrorStats === "function") await resetErrorStats();
-      localStorage.removeItem(FAVORITES_KEY);
-    });
 
     document.getElementById("accountSignOutBtn")?.addEventListener("click",async()=>{
       if(!confirm("確定要登出目前帳號嗎？")) return;
@@ -9994,5 +9988,23 @@ updateButtonDisplay();
   #visitorSummary .visitor-icon{font-size:14px !important;}
   #visitorSummary .visitor-label{font-size:8px !important;}
   #visitorSummary .visitor-value{font-size:13px !important;}
+}
+</style>
+<style id="visitor-summary-left-final">
+/* 最終調整：累計使用＋今日回訪固定在首頁左側，同一排；不改變目前在線左上角即時顯示 */
+#visitorSummary{
+  margin-left:16px !important;
+  margin-right:0 !important;
+  margin-top:6px !important;
+  margin-bottom:6px !important;
+  justify-content:flex-start !important;
+}
+@media(max-width:700px){
+  #visitorSummary{
+    margin-left:8px !important;
+    margin-right:0 !important;
+    margin-top:4px !important;
+    margin-bottom:4px !important;
+  }
 }
 </style>
