@@ -5377,6 +5377,154 @@ body:not(.supabase-authenticated) #container{
   body.v40-night .fh-remove-wrap button{background:#202020 !important;color:#f3eee8 !important;border-color:#555 !important}
   @media(max-width:700px){.fh-toolbar button{flex:1 1 140px}.favorite-btn{display:block;margin:4px 0 8px 0}}
 </style>
+
+<style id="compact-visitor-stats-v5">
+/* v5：三個訪客統計再縮小，維持數字清楚 */
+#visitorStats,
+.visitor-stats,
+.home-visitor-stats{
+  gap:5px !important;
+  margin:5px auto !important;
+}
+#visitorStats > *,
+.visitor-stats > *,
+.home-visitor-stats > *{
+  padding:5px 7px !important;
+  min-height:0 !important;
+  border-radius:7px !important;
+}
+#visitorStats .label,
+.visitor-stats .label,
+.home-visitor-stats .label{
+  font-size:11px !important;
+  line-height:1.15 !important;
+  margin:0 0 2px !important;
+}
+#visitorStats .value,
+.visitor-stats .value,
+.home-visitor-stats .value{
+  font-size:16px !important;
+  line-height:1.05 !important;
+  margin:0 !important;
+}
+@media(max-width:600px){
+  #visitorStats,
+  .visitor-stats,
+  .home-visitor-stats{gap:4px !important;margin:4px auto !important;}
+  #visitorStats > *,
+  .visitor-stats > *,
+  .home-visitor-stats > *{padding:4px 5px !important;}
+  #visitorStats .label,
+  .visitor-stats .label,
+  .home-visitor-stats .label{font-size:10px !important;}
+  #visitorStats .value,
+  .visitor-stats .value,
+  .home-visitor-stats .value{font-size:14px !important;}
+}
+</style>
+
+
+<style id="visitor-horizontal-v6">
+/* 目前在線／累計使用／今日回訪：小型橫排方塊 */
+#visitorSummary{
+  width:min(420px,calc(100% - 24px)) !important;
+  max-width:420px !important;
+  margin:5px 18px 5px auto !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:5px !important;
+}
+#visitorSummary .visitor-card{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:40px !important;
+  height:40px !important;
+  padding:3px 5px !important;
+  border-radius:8px !important;
+  gap:4px !important;
+  box-shadow:0 1px 5px rgba(0,0,0,.07) !important;
+}
+#visitorSummary .visitor-icon{font-size:17px !important;line-height:1 !important;}
+#visitorSummary .visitor-label{font-size:10px !important;line-height:1.15 !important;white-space:nowrap !important;}
+#visitorSummary .visitor-value{font-size:16px !important;line-height:1.1 !important;font-weight:800 !important;white-space:nowrap !important;}
+@media(max-width:700px){
+  #visitorSummary{width:calc(100% - 16px) !important;max-width:420px !important;margin:4px auto !important;gap:4px !important;}
+  #visitorSummary .visitor-card{min-height:40px !important;height:40px !important;padding:3px 4px !important;border-radius:8px !important;gap:4px !important;}
+  #visitorSummary .visitor-icon{font-size:15px !important;}
+  #visitorSummary .visitor-label{font-size:9px !important;}
+  #visitorSummary .visitor-value{font-size:14px !important;}
+}
+</style>
+
+<style id="visitor-horizontal-v8">
+/* 三個訪客統計：固定窄寬橫排，不再撐滿 */
+#visitorSummary{
+  width:260px !important;
+  max-width:260px !important;
+  margin:5px 18px 5px auto !important;
+  display:grid !important;
+  grid-template-columns:repeat(3, 1fr) !important;
+  gap:4px !important;
+}
+#visitorSummary .visitor-card{
+  width:84px !important;
+  max-width:84px !important;
+  min-width:84px !important;
+  min-height:38px !important;
+  height:38px !important;
+  padding:3px 4px !important;
+  border-radius:7px !important;
+  gap:3px !important;
+  box-sizing:border-box !important;
+}
+#visitorSummary .visitor-icon{font-size:15px !important;line-height:1 !important;}
+#visitorSummary .visitor-label{font-size:9px !important;line-height:1.1 !important;white-space:nowrap !important;}
+#visitorSummary .visitor-value{font-size:14px !important;line-height:1.05 !important;font-weight:800 !important;white-space:nowrap !important;}
+@media(max-width:700px){
+  #visitorSummary{width:250px !important;max-width:250px !important;margin:4px auto !important;gap:4px !important;}
+  #visitorSummary .visitor-card{width:80px !important;max-width:80px !important;min-width:80px !important;height:36px !important;min-height:36px !important;padding:3px !important;gap:3px !important;}
+  #visitorSummary .visitor-icon{font-size:14px !important;}
+  #visitorSummary .visitor-label{font-size:8px !important;}
+  #visitorSummary .visitor-value{font-size:13px !important;}
+}
+</style>
+
+<style id="visitor-horizontal-v9">
+/* v9：三個統計直接排成一整排，卡片內也採橫向排列 */
+#visitorSummary{
+  width:100% !important;
+  max-width:1100px !important;
+  margin:6px auto !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:stretch !important;
+  justify-content:center !important;
+  gap:6px !important;
+}
+#visitorSummary .visitor-card{
+  flex:1 1 0 !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  min-height:36px !important;
+  height:36px !important;
+  padding:3px 8px !important;
+  border-radius:8px !important;
+  gap:6px !important;
+  flex-direction:row !important;
+  justify-content:center !important;
+}
+#visitorSummary .visitor-icon{font-size:16px !important;line-height:1 !important;}
+#visitorSummary .visitor-label{font-size:10px !important;line-height:1 !important;white-space:nowrap !important;}
+#visitorSummary .visitor-value{font-size:15px !important;line-height:1 !important;font-weight:800 !important;white-space:nowrap !important;}
+@media(max-width:700px){
+  #visitorSummary{width:calc(100% - 12px) !important;max-width:none !important;margin:4px auto !important;gap:4px !important;}
+  #visitorSummary .visitor-card{min-height:34px !important;height:34px !important;padding:3px 4px !important;gap:4px !important;border-radius:7px !important;}
+  #visitorSummary .visitor-icon{font-size:14px !important;}
+  #visitorSummary .visitor-label{font-size:9px !important;}
+  #visitorSummary .visitor-value{font-size:13px !important;}
+}
+</style>
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -5509,7 +5657,7 @@ body.supabase-authenticated #loginPanel {
   </div>
 </div>
 
-<div id="online-count" aria-live="polite">🟡 在線人數：連線中…</div>
+
 
 <div class="marquee-container">
     <div class="marquee-text">
@@ -5522,6 +5670,200 @@ body.supabase-authenticated #loginPanel {
 <br/><hr/>
 </div>
 <div id="v40-home-exam-countdown" class="v40-home-exam-countdown" aria-live="polite">📅 第四階段測驗：2026/11/07　｜　距離測驗還有：70天</div>
+
+<style id="visitor-summary-and-theme-final">
+/* ===== 首頁訪客統計：依參考圖做成三張小卡 ===== */
+#visitorSummary{
+  width:min(360px,calc(100% - 32px));
+  max-width:360px;
+  margin:6px 24px 6px auto;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+  box-sizing:border-box;
+}
+#visitorSummary .visitor-card{
+  min-height:54px;
+  padding:6px 7px;
+  border-radius:10px;
+  border:1px solid #d9e1ea;
+  background:#ffffff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  text-align:center;
+  box-shadow:0 3px 10px rgba(30,55,80,.07);
+}
+#visitorSummary .visitor-icon{font-size:20px;line-height:1;}
+#visitorSummary .visitor-label{font-size:11px;font-weight:800;margin-bottom:1px;color:#475467;}
+#visitorSummary .visitor-value{font-size:20px;line-height:1.05;font-weight:900;color:#173b66;}
+#visitorSummary .visitor-card.online .visitor-icon{color:#168a45;}
+#visitorSummary .visitor-card.online .visitor-value{color:#168a45;}
+#visitorSummary .visitor-card.total .visitor-icon{color:#1769c2;}
+#visitorSummary .visitor-card.total .visitor-value{color:#1769c2;}
+#visitorSummary .visitor-card.returning .visitor-icon{color:#7340b5;}
+#visitorSummary .visitor-card.returning .visitor-value{color:#7340b5;}
+
+/* ===== 日間：清楚、柔和、文字深色 ===== */
+body:not(.v40-night) #visitorSummary .visitor-card{
+  background:linear-gradient(135deg,#ffffff,#f7fbff);
+  border-color:#d7e1ec;
+}
+body:not(.v40-night) #v40-home-exam-countdown{
+  background:#fff5dc !important;
+  color:#4b3b16 !important;
+  border:1px solid #f0dfae;
+}
+
+/* ===== 夜間：降低刺眼反差，但維持明確層次 ===== */
+body.v40-night #visitorSummary .visitor-card{
+  background:#202a36 !important;
+  border-color:#435263 !important;
+  box-shadow:0 3px 12px rgba(0,0,0,.28);
+}
+body.v40-night #visitorSummary .visitor-label{color:#cbd5e1 !important;}
+body.v40-night #visitorSummary .visitor-card.online .visitor-value{color:#8fe0ae !important;}
+body.v40-night #visitorSummary .visitor-card.total .visitor-value{color:#8fc5ff !important;}
+body.v40-night #visitorSummary .visitor-card.returning .visitor-value{color:#d1a8ff !important;}
+body.v40-night #visitorSummary .visitor-card.online .visitor-icon{color:#8fe0ae !important;}
+body.v40-night #visitorSummary .visitor-card.total .visitor-icon{color:#8fc5ff !important;}
+body.v40-night #visitorSummary .visitor-card.returning .visitor-icon{color:#d1a8ff !important;}
+body.v40-night #v40-home-exam-countdown{
+  background:#2b2a22 !important;
+  color:#f1e4b5 !important;
+  border:1px solid #5a5237 !important;
+}
+
+@media(max-width:700px){
+  #visitorSummary{width:calc(100% - 20px);max-width:360px;gap:5px;margin:5px auto 6px;}
+  #visitorSummary .visitor-card{min-height:48px;padding:5px 3px;gap:4px;border-radius:9px;}
+  #visitorSummary .visitor-icon{font-size:17px;}
+  #visitorSummary .visitor-label{font-size:10px;}
+  #visitorSummary .visitor-value{font-size:17px;}
+}
+</style>
+
+<script id="visitor-summary-ui-final">
+(function(){
+  function addVisitorSummary(){
+    if(document.getElementById('visitorSummary')) return;
+    var countdown=document.getElementById('v40-home-exam-countdown');
+    if(!countdown || !countdown.parentNode) return;
+    var box=document.createElement('div');
+    box.id='visitorSummary';
+    box.innerHTML=''
+      + '<div class="visitor-card total"><div class="visitor-icon">📊</div><div><div class="visitor-label">累計使用</div><div class="visitor-value" id="visitor-total-value">0 人</div></div></div>'
+      + '<div class="visitor-card returning"><div class="visitor-icon">↻</div><div><div class="visitor-label">今日回訪</div><div class="visitor-value" id="visitor-returning-value">0 人</div></div></div>';
+    countdown.insertAdjacentElement('afterend',box);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',addVisitorSummary,{once:true});
+  else addVisitorSummary();
+  setTimeout(addVisitorSummary,500);
+  setTimeout(addVisitorSummary,1500);
+})();
+</script>
+
+<script id="site-visitors-tracker">
+(function(){
+  const TABLE = 'site_visitors';
+  const DEVICE_KEY_NAME = '64ding_site_visitor_key';
+  const client = window.supabaseClient;
+
+  function getDeviceKey(){
+    let key = localStorage.getItem(DEVICE_KEY_NAME);
+    if(!key){
+      key = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dv-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+      localStorage.setItem(DEVICE_KEY_NAME, key);
+    }
+    return key;
+  }
+
+  function localDateString(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function localStartIso(){
+    const d = new Date();
+    d.setHours(0,0,0,0);
+    return d.toISOString();
+  }
+
+  function setValue(id, value){
+    const el = document.getElementById(id);
+    if(el) el.textContent = `${Number(value || 0).toLocaleString('zh-TW')} 人`;
+  }
+
+  async function refreshCounts(){
+    if(!client) return;
+    const today = localDateString();
+    const startIso = localStartIso();
+    try{
+      const total = await client.from(TABLE).select('device_key', {count:'exact', head:true});
+      if(total.error) throw total.error;
+      setValue('visitor-total-value', total.count || 0);
+
+      const returning = await client.from(TABLE)
+        .select('device_key', {count:'exact', head:true})
+        .eq('last_seen_date', today)
+        .lt('first_seen', startIso);
+      if(returning.error) throw returning.error;
+      setValue('visitor-returning-value', returning.count || 0);
+    }catch(err){
+      console.warn('[site_visitors]', err);
+    }
+  }
+
+  async function trackVisitor(){
+    if(!client) return;
+    const key = getDeviceKey();
+    const today = localDateString();
+    try{
+      const existing = await client.from(TABLE)
+        .select('device_key, first_seen')
+        .eq('device_key', key)
+        .maybeSingle();
+      if(existing.error) throw existing.error;
+
+      const payload = {
+        device_key: key,
+        last_seen: new Date().toISOString(),
+        last_seen_date: today
+      };
+      if(!existing.data){
+        // first_seen 交給資料庫 default now() 建立；不會因回訪而被重設。
+      }
+      const saved = await client.from(TABLE).upsert(payload, {onConflict:'device_key'});
+      if(saved.error) throw saved.error;
+      await refreshCounts();
+    }catch(err){
+      console.warn('[site_visitors]', err);
+      await refreshCounts();
+    }
+  }
+
+  function boot(){
+    setTimeout(trackVisitor, 700);
+    setInterval(function(){
+      const nowKey = localDateString();
+      if(window.__64dingVisitorLastDate !== nowKey){
+        window.__64dingVisitorLastDate = nowKey;
+        trackVisitor();
+      }else{
+        refreshCounts();
+      }
+    }, 60000);
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true});
+  else boot();
+})();
+</script>
+
 <div id="container">
 </div>
 <style>
@@ -9123,44 +9465,7 @@ updateButtonDisplay();
 </script>
 
 
-<style id="online-count-final-force">
-/* 在線人數：強制保留並置於頁面最上層 */
-#online-count{
-  display:block !important;
-  visibility:visible !important;
-  position:fixed !important;
-  top:10px !important;
-  left:10px !important;
-  z-index:2147483647 !important;
-  min-width:118px !important;
-  padding:7px 12px !important;
-  box-sizing:border-box !important;
-  border:1px solid #8ea795 !important;
-  border-radius:10px !important;
-  background:#ffffff !important;
-  color:#17301f !important;
-  font-size:15px !important;
-  font-weight:900 !important;
-  line-height:1.25 !important;
-  text-align:center !important;
-  opacity:1 !important;
-  pointer-events:none !important;
-}
-body.v40-night #online-count{
-  background:#111111 !important;
-  color:#f5eee6 !important;
-  border-color:#555555 !important;
-}
-@media(max-width:600px){
-  #online-count{
-    top:8px !important;
-    left:8px !important;
-    min-width:108px !important;
-    padding:6px 9px !important;
-    font-size:13px !important;
-  }
-}
-</style>
+<style id="online-count-final-force">#online-count{display:block !important;}</style>
 
 <script id="online-count-final-bootstrap">
 (function(){
@@ -9218,44 +9523,11 @@ body.v40-night #online-count{
 }
 </style>
 
-<style id="online-count-auto-reconnect">
-#online-count{
-  position:fixed !important;
-  top:10px !important;
-  left:10px !important;
-  z-index:2147483647 !important;
-  display:block !important;
-  visibility:visible !important;
-  min-width:118px !important;
-  padding:7px 12px !important;
-  box-sizing:border-box !important;
-  border:1px solid #8ea795 !important;
-  border-radius:10px !important;
-  background:#fff !important;
-  color:#17301f !important;
-  box-shadow:0 2px 10px rgba(0,0,0,.18) !important;
-  font-size:15px !important;
-  font-weight:900 !important;
-  line-height:1.25 !important;
-  text-align:center !important;
-  pointer-events:none !important;
-}
-body.v40-night #online-count{
-  background:#111 !important;
-  color:#f5eee6 !important;
-  border-color:#555 !important;
-}
-@media(max-width:600px){
-  #online-count{
-    top:8px !important;
-    left:8px !important;
-    min-width:108px !important;
-    padding:6px 9px !important;
-    font-size:13px !important;
-  }
-}
-</style>
+<style id="online-count-auto-reconnect">#online-count{display:block !important;}</style>
 
+
+<style id="visitor-online-number-final">
+</style>
 <script id="supabase-online-presence">
 (function(){
   const CHANNEL_NAME = "64ding-online-users";
@@ -9274,7 +9546,8 @@ body.v40-night #online-count{
   function show(text){
     const e = el();
     if(e){
-      e.textContent = text;
+      const m = String(text || "").match(/(\d+)/);
+      e.textContent = "🟢 在線人數：" + (m ? m[1] : "1");
       e.style.setProperty("display","block","important");
       e.style.setProperty("visibility","visible","important");
     }
@@ -9542,6 +9815,184 @@ body.v40-night #online-count{
 })();
 </script>
 
+
+<style id="visitor-same-row-v10">
+/* 三個統計方塊：同一排由左至右 */
+#visitorSummary{
+  width:auto !important;
+  max-width:none !important;
+  margin:5px auto !important;
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  justify-content:center !important;
+  align-items:stretch !important;
+  gap:6px !important;
+}
+#visitorSummary .visitor-card{
+  flex:0 0 auto !important;
+  width:96px !important;
+  min-width:96px !important;
+  max-width:96px !important;
+  height:40px !important;
+  min-height:40px !important;
+  padding:3px 5px !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+  border-radius:8px !important;
+}
+#visitorSummary .visitor-icon{font-size:15px !important;line-height:1 !important;flex:0 0 auto !important;}
+#visitorSummary .visitor-label{font-size:9px !important;line-height:1.05 !important;white-space:nowrap !important;}
+#visitorSummary .visitor-value{font-size:13px !important;line-height:1 !important;white-space:nowrap !important;font-weight:800 !important;}
+@media(max-width:700px){
+  #visitorSummary{gap:4px !important;margin:4px auto !important;}
+  #visitorSummary .visitor-card{width:88px !important;min-width:88px !important;max-width:88px !important;height:38px !important;min-height:38px !important;padding:3px 4px !important;gap:3px !important;}
+  #visitorSummary .visitor-icon{font-size:14px !important;}
+  #visitorSummary .visitor-label{font-size:8px !important;}
+  #visitorSummary .visitor-value{font-size:12px !important;}
+}
+</style>
+
+<style id="visitor-row-v12-final">
+/* 最終版：三個統計獨立小方塊，同一列固定由左→右；目前在線使用 Supabase Realtime */
+#visitorSummary{
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  width:max-content !important;
+  max-width:calc(100vw - 20px) !important;
+  margin:6px auto !important;
+  padding:0 !important;
+  gap:6px !important;
+  justify-content:flex-start !important;
+  align-items:center !important;
+  overflow:visible !important;
+}
+#visitorSummary .visitor-card{
+  flex:0 0 92px !important;
+  width:92px !important;
+  min-width:92px !important;
+  max-width:92px !important;
+  height:44px !important;
+  min-height:44px !important;
+  max-height:44px !important;
+  margin:0 !important;
+  padding:3px 5px !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+  border-radius:8px !important;
+}
+#visitorSummary .visitor-icon{
+  flex:0 0 auto !important;
+  font-size:15px !important;
+  line-height:1 !important;
+}
+#visitorSummary .visitor-card > div:last-child{
+  min-width:0 !important;
+  text-align:left !important;
+}
+#visitorSummary .visitor-label{
+  margin:0 !important;
+  font-size:9px !important;
+  line-height:1.05 !important;
+  white-space:nowrap !important;
+}
+#visitorSummary .visitor-value{
+  margin:1px 0 0 !important;
+  font-size:14px !important;
+  line-height:1 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+}
+/* 確保目前在線數字由 Realtime 腳本更新的目標唯一且可見 */
+#visitorSummary #online-count-value{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+@media(max-width:700px){
+  #visitorSummary{
+    gap:4px !important;
+    margin:4px auto !important;
+    max-width:calc(100vw - 12px) !important;
+  }
+  #visitorSummary .visitor-card{
+    flex-basis:86px !important;
+    width:86px !important;
+    min-width:86px !important;
+    max-width:86px !important;
+    height:40px !important;
+    min-height:40px !important;
+    max-height:40px !important;
+    padding:3px 4px !important;
+    gap:3px !important;
+  }
+  #visitorSummary .visitor-icon{font-size:14px !important;}
+  #visitorSummary .visitor-label{font-size:8px !important;}
+  #visitorSummary .visitor-value{font-size:13px !important;}
+}
+</style>
+<script id="visitor-realtime-guard-v12">
+(function(){
+  function ensureOnlineRealtime(){
+    const e=document.getElementById('online-count-value');
+    if(!e) return;
+    e.setAttribute('data-realtime','true');
+  }
+  document.addEventListener('DOMContentLoaded',ensureOnlineRealtime);
+  window.addEventListener('load',ensureOnlineRealtime);
+  setTimeout(ensureOnlineRealtime,300);
+})();
+</script>
 </body></html>
 
 <style id="remove-custom-background-final">#backgroundColorPicker,.public-background-setting,.bg-preset,#backgroundResetBtn,.bg-color-picker-wrap{display:none!important}</style>
+
+
+<style id="visitor-row-v11">
+/* 3個訪客統計：三個獨立小方塊，固定在同一排由左到右 */
+#visitorSummary{
+  width:fit-content !important;
+  max-width:none !important;
+  margin:6px auto !important;
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  align-items:stretch !important;
+  justify-content:center !important;
+  gap:6px !important;
+}
+#visitorSummary .visitor-card{
+  flex:0 0 92px !important;
+  width:92px !important;
+  max-width:92px !important;
+  min-width:92px !important;
+  min-height:46px !important;
+  height:46px !important;
+  padding:4px 5px !important;
+  box-sizing:border-box !important;
+  border-radius:8px !important;
+  gap:3px !important;
+}
+#visitorSummary .visitor-icon{font-size:16px !important; line-height:1 !important;}
+#visitorSummary .visitor-label{font-size:9px !important; line-height:1.1 !important; white-space:nowrap !important;}
+#visitorSummary .visitor-value{font-size:15px !important; line-height:1.05 !important; white-space:nowrap !important;}
+@media(max-width:700px){
+  #visitorSummary{gap:4px !important; margin:4px auto !important;}
+  #visitorSummary .visitor-card{
+    flex-basis:82px !important; width:82px !important; max-width:82px !important; min-width:82px !important;
+    min-height:42px !important; height:42px !important; padding:3px 4px !important;
+  }
+  #visitorSummary .visitor-icon{font-size:14px !important;}
+  #visitorSummary .visitor-label{font-size:8px !important;}
+  #visitorSummary .visitor-value{font-size:13px !important;}
+}
+</style>
