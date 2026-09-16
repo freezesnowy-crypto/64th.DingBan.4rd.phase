@@ -41,7 +41,7 @@ async function checkLogin(){
   }
 }
 </script>
-<!-- v20: 累計使用／今日回訪改由 Supabase RPC record_site_visit 自動統計 -->
+<!-- v20: ／今日訪客改由 Supabase RPC record_site_visit 自動統計 -->
 <style id="homepage-mode-row-bg">
 /* 首頁「科目／刷題模式／測驗模式」三個區塊，跟隨首頁日夜模式背景 */
 body.v40-night .home-subject-row,
@@ -5426,7 +5426,7 @@ body:not(.supabase-authenticated) #container{
 
 
 <style id="visitor-horizontal-v6">
-/* 目前在線／累計使用／今日回訪：小型橫排方塊 */
+/* 目前在線／今日訪客：小型橫排方塊 */
 #visitorSummary{
   width:min(420px,calc(100% - 24px)) !important;
   max-width:420px !important;
@@ -5753,8 +5753,7 @@ body.v40-night #v40-home-exam-countdown{
     var box=document.createElement('div');
     box.id='visitorSummary';
     box.innerHTML=''
-      + '<div class="visitor-card total"><div class="visitor-icon">📊</div><div><div class="visitor-label">累計使用</div><div class="visitor-value" id="visitor-total-value">0 人</div></div></div>'
-      + '<div class="visitor-card returning"><div class="visitor-icon">↻</div><div><div class="visitor-label">今日回訪</div><div class="visitor-value" id="visitor-returning-value">0 人</div></div></div>';
+      + '<div class="visitor-card returning"><div class="visitor-icon">↻</div><div><div class="visitor-label">今日訪客</div><div class="visitor-value" id="visitor-returning-value">0 人</div></div></div>';
     countdown.insertAdjacentElement('afterend',box);
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',addVisitorSummary,{once:true});
@@ -5799,8 +5798,7 @@ body.v40-night #v40-home-exam-countdown{
       if(error) throw error;
 
       if(data){
-        setValue('visitor-total-value', data.total_users);
-        setValue('visitor-returning-value', data.today_returning);
+        setValue('visitor-returning-value', (data.today_visitors != null ? data.today_visitors : data.today_returning));
       }
     }catch(err){
       console.warn('[site_visitors v20]', err);
@@ -9418,49 +9416,7 @@ updateButtonDisplay();
 
 <style id="online-count-final-force">#online-count{display:block !important;}</style>
 
-<script id="online-count-final-bootstrap">
-(function(){
-  function ensureOnlineCountElement(){
-    var el=document.getElementById("online-count");
-    if(!el){
-      el=document.createElement("div");
-      el.id="online-count";
-      el.setAttribute("aria-live","polite");
-      el.textContent="🟢 在線人數：1";
-      document.body.appendChild(el);
-    }else{
-      el.style.setProperty("display","block","important");
-      el.style.setProperty("visibility","visible","important");
-      el.style.setProperty("z-index","2147483647","important");
-      if(!el.textContent || !el.textContent.trim()){
-        el.textContent="🟢 在線人數：1";
-      }
-    }
-    return el;
-  }
 
-  function patchOnlineScript(){
-    var el=ensureOnlineCountElement();
-    /* 先顯示自己，避免 Supabase 連線尚未完成時整塊消失 */
-    el.textContent="🟢 在線人數：1";
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",patchOnlineScript,{once:true});
-  }else{
-    patchOnlineScript();
-  }
-
-  /* 有些瀏覽器擴充功能會重建 body 子節點，定期確認元素仍存在 */
-  setTimeout(function(){
-    try{ ensureOnlineCountElement(); }catch(e){}
-  },800);
-
-  setTimeout(function(){
-    try{ ensureOnlineCountElement(); }catch(e){}
-  },2000);
-})();
-</script>
 
 <style id="remove-basic-data-final">
 /* 使用者要求：功能表中的「基本資料」及其欄位不顯示 */
@@ -9477,159 +9433,7 @@ updateButtonDisplay();
 <style id="online-count-auto-reconnect">#online-count{display:block !important;}</style>
 
 
-<style id="visitor-online-number-final">
-</style>
-<script id="supabase-online-presence">
-(function(){
-  const CHANNEL_NAME = "64ding-online-users";
-  const el = () => document.getElementById("online-count");
-  let channel = null;
-  let reconnectTimer = null;
-  let clientWaitTimer = null;
-  let reconnectDelay = 1500;
-  let destroyed = false;
-  let started = false;
-  let connected = false;
 
-  // 在線人數採「分頁/工作階段」計算：每次開啟一個頁面都產生獨立 UUID，
-  // 因此同一台電腦同時開多個分頁也能正確反映即時在線連線數。
-  const presenceKey = (window.crypto && crypto.randomUUID)
-    ? crypto.randomUUID()
-    : "tab-" + Date.now() + "-" + Math.random().toString(36).slice(2);
-
-  function showNumber(n){
-    const e = el();
-    if(!e) return;
-    const num = Math.max(1, Number(n) || 1);
-    e.textContent = "🟢 在線人數：" + num;
-    e.style.setProperty("display","block","important");
-    e.style.setProperty("visibility","visible","important");
-  }
-
-  function countPresence(){
-    try{
-      if(!channel || !connected) return 1;
-      const state = channel.presenceState() || {};
-      return Math.max(1, Object.keys(state).length);
-    }catch(e){
-      return 1;
-    }
-  }
-
-  function updateCount(){
-    showNumber(countPresence());
-  }
-
-  function scheduleReconnect(){
-    if(destroyed || reconnectTimer) return;
-    connected = false;
-    showNumber(1);
-    reconnectTimer = setTimeout(function(){
-      reconnectTimer = null;
-      connect();
-    }, reconnectDelay);
-    reconnectDelay = Math.min(Math.round(reconnectDelay * 1.7), 15000);
-  }
-
-  function waitForClient(){
-    if(destroyed || window.supabaseClient) {
-      if(clientWaitTimer){ clearTimeout(clientWaitTimer); clientWaitTimer=null; }
-      connect();
-      return;
-    }
-    clientWaitTimer = setTimeout(waitForClient, 400);
-  }
-
-  async function connect(){
-    if(destroyed) return;
-    const client = window.supabaseClient ||
-      (window.supabase && window.supabase.createClient ? window.supabase.createClient(
-        "https://rmodlesfzcmuvittujhc.supabase.co",
-        "sb_publishable_xnvJrBdhqUS7sfszSo_Pzw_5sHGAlro"
-      ) : null);
-
-    if(!client){
-      showNumber(1);
-      waitForClient();
-      return;
-    }
-
-    try{
-      connected = false;
-      if(channel){
-        try{ await channel.unsubscribe(); }catch(e){}
-        channel = null;
-      }
-
-      channel = client.channel(CHANNEL_NAME, {
-        config:{ presence:{ key: presenceKey } }
-      });
-
-      channel
-        .on("presence", {event:"sync"}, updateCount)
-        .on("presence", {event:"join"}, updateCount)
-        .on("presence", {event:"leave"}, updateCount)
-        .subscribe(async function(status){
-          if(status === "SUBSCRIBED") {
-            connected = true;
-            reconnectDelay = 1500;
-            try{
-              const result = await channel.track({
-                session_key: presenceKey,
-                online_at: new Date().toISOString()
-              });
-              if(result && result.error){
-                console.warn("在線人數 track 失敗：", result.error);
-                scheduleReconnect();
-              }else{
-                // 等 Realtime 同步完成後再讀 presence 狀態。
-                setTimeout(updateCount, 100);
-              }
-            }catch(e){
-              console.warn("在線人數 track 例外：", e);
-              scheduleReconnect();
-            }
-          } else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-            console.warn("在線人數頻道狀態：", status);
-            scheduleReconnect();
-          }
-        });
-
-    }catch(e){
-      console.warn("在線人數連線失敗：", e);
-      scheduleReconnect();
-    }
-  }
-
-  function start(){
-    if(started) return;
-    started = true;
-    showNumber(1);
-    waitForClient();
-  }
-
-  window.addEventListener("online", function(){
-    reconnectDelay = 1500;
-    scheduleReconnect();
-  });
-
-  window.addEventListener("pagehide", function(){
-    destroyed = true;
-    connected = false;
-    if(reconnectTimer) clearTimeout(reconnectTimer);
-    if(clientWaitTimer) clearTimeout(clientWaitTimer);
-    reconnectTimer = null;
-    clientWaitTimer = null;
-    try{ if(channel) channel.unsubscribe(); }catch(e){}
-  }, {once:true});
-
-  if(document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", start, {once:true});
-  } else {
-    start();
-  }
-})();
-</script>
 
 <style id="background-settings-position-final">
 /* ===== 自選背景設定：固定在「☰ → 🎨 背景設定」下方 ===== */
@@ -9909,10 +9713,60 @@ updateButtonDisplay();
     }
     e.style.setProperty('display','block','important');
     e.style.setProperty('visibility','visible','important');
-    if(!e.textContent || !e.textContent.trim()) e.textContent='🟢 在線人數：1';
+    if(!e.textContent || !e.textContent.trim()) e.textContent='🟡 在線人數：連線中…';
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ensure,{once:true});
   else ensure();
+})();
+</script>
+<style id="local-online-count-style">
+#online-count{position:fixed;top:12px;left:12px;z-index:2147483647;padding:7px 11px;border-radius:10px;font-size:15px;font-weight:800;line-height:1.2;background:rgba(255,255,255,.92);color:#111;box-shadow:0 2px 10px rgba(0,0,0,.18);pointer-events:none;}
+body.v40-night #online-count{background:#111 !important;color:#F3EEE8 !important;border:1px solid #444;}
+@media(max-width:600px){#online-count{top:8px;left:8px;font-size:13px;padding:6px 9px;}}
+</style>
+<script id="local-online-count-v1">
+(function(){
+  const REG_KEY='64ding_local_online_tabs_v1';
+  const TAB_KEY='64ding_local_online_tab_id_v1';
+  const HEARTBEAT_MS=2500;
+  const STALE_MS=8000;
+  let tabId=sessionStorage.getItem(TAB_KEY);
+  if(!tabId){
+    tabId=(crypto&&crypto.randomUUID)?crypto.randomUUID():('tab-'+Date.now()+'-'+Math.random().toString(36).slice(2));
+    sessionStorage.setItem(TAB_KEY,tabId);
+  }
+  function getReg(){
+    try{return JSON.parse(localStorage.getItem(REG_KEY)||'{}')||{};}catch(e){return {};}
+  }
+  function saveReg(reg){try{localStorage.setItem(REG_KEY,JSON.stringify(reg));}catch(e){}}
+  function clean(reg,now){
+    Object.keys(reg).forEach(k=>{if(!reg[k] || now-reg[k]>STALE_MS) delete reg[k];});
+    return reg;
+  }
+  function render(){
+    const now=Date.now();
+    const reg=clean(getReg(),now);
+    reg[tabId]=now;
+    saveReg(reg);
+    let el=document.getElementById('online-count');
+    if(!el){el=document.createElement('div');el.id='online-count';el.setAttribute('aria-live','polite');document.body.appendChild(el);}
+    el.textContent='🟢 在線人數：'+Object.keys(reg).length;
+    el.style.display='block';el.style.visibility='visible';
+  }
+  function beat(){render();}
+  function removeSelf(){
+    const reg=getReg();
+    delete reg[tabId];
+    saveReg(reg);
+    if(window.bc){try{bc.postMessage({type:'update'});}catch(e){}}
+  }
+  let bc=null;
+  try{bc=new BroadcastChannel('64ding-local-online-v1');bc.onmessage=render;}catch(e){}
+  window.addEventListener('storage',render);
+  window.addEventListener('pagehide',removeSelf,{once:true});
+  window.addEventListener('beforeunload',removeSelf,{once:true});
+  function start(){render();setInterval(beat,HEARTBEAT_MS);}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
 </script>
 </body></html>
@@ -9960,7 +9814,7 @@ updateButtonDisplay();
 }
 </style>
 <style id="visitor-summary-left-final">
-/* 最終調整：累計使用＋今日回訪固定在首頁左側，同一排；不改變目前在線左上角即時顯示 */
+/* 最終調整：今日訪客固定在首頁左側，同一排；不改變目前在線左上角即時顯示 */
 #visitorSummary{
   margin-left:16px !important;
   margin-right:0 !important;
