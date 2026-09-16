@@ -9724,49 +9724,127 @@ updateButtonDisplay();
 body.v40-night #online-count{background:#111 !important;color:#F3EEE8 !important;border:1px solid #444;}
 @media(max-width:600px){#online-count{top:8px;left:8px;font-size:13px;padding:6px 9px;}}
 </style>
-<script id="local-online-count-v1">
+<script id="local-online-count-v2-unlimited">
 (function(){
-  const REG_KEY='64ding_local_online_tabs_v1';
-  const TAB_KEY='64ding_local_online_tab_id_v1';
-  const HEARTBEAT_MS=2500;
-  const STALE_MS=8000;
-  let tabId=sessionStorage.getItem(TAB_KEY);
-  if(!tabId){
-    tabId=(crypto&&crypto.randomUUID)?crypto.randomUUID():('tab-'+Date.now()+'-'+Math.random().toString(36).slice(2));
-    sessionStorage.setItem(TAB_KEY,tabId);
+  // 純網頁版：同一個瀏覽器／同一網站來源的所有分頁，即時統計，不設上限。
+  const CHANNEL = '64ding-local-online-unlimited-v2';
+  const TAB_KEY = '64ding_local_online_tab_id_v2';
+  const HEARTBEAT_MS = 2000;
+  const ACTIVE_MS = 7000;
+  const REQUEST_WINDOW_MS = 700;
+  let tabId = null;
+  try {
+    tabId = sessionStorage.getItem(TAB_KEY);
+    if(!tabId){
+      tabId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+        : ('tab-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+      sessionStorage.setItem(TAB_KEY, tabId);
+    }
+  } catch(e) {
+    tabId = 'tab-' + Date.now() + '-' + Math.random().toString(36).slice(2);
   }
-  function getReg(){
-    try{return JSON.parse(localStorage.getItem(REG_KEY)||'{}')||{};}catch(e){return {};}
+
+  let bc = null;
+  let localPeers = new Map();
+  let requestTimer = null;
+
+  function el(){
+    let e=document.getElementById('online-count');
+    if(!e){
+      e=document.createElement('div');
+      e.id='online-count';
+      e.setAttribute('aria-live','polite');
+      document.body.appendChild(e);
+    }
+    return e;
   }
-  function saveReg(reg){try{localStorage.setItem(REG_KEY,JSON.stringify(reg));}catch(e){}}
-  function clean(reg,now){
-    Object.keys(reg).forEach(k=>{if(!reg[k] || now-reg[k]>STALE_MS) delete reg[k];});
-    return reg;
-  }
-  function render(){
+
+  function prune(){
     const now=Date.now();
-    const reg=clean(getReg(),now);
-    reg[tabId]=now;
-    saveReg(reg);
-    let el=document.getElementById('online-count');
-    if(!el){el=document.createElement('div');el.id='online-count';el.setAttribute('aria-live','polite');document.body.appendChild(el);}
-    el.textContent='🟢 在線人數：'+Object.keys(reg).length;
-    el.style.display='block';el.style.visibility='visible';
+    for(const [id,ts] of localPeers.entries()){
+      if(id===tabId || now-ts>ACTIVE_MS) localPeers.delete(id);
+    }
   }
-  function beat(){render();}
+
+  function render(count){
+    const e=el();
+    const n=Math.max(1, Number(count)||1);
+    e.textContent='🟢 在線人數：'+n;
+    e.style.setProperty('display','block','important');
+    e.style.setProperty('visibility','visible','important');
+  }
+
+  function requestCount(){
+    if(!bc){
+      prune();
+      render(localPeers.size || 1);
+      return;
+    }
+    const requestId = tabId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    const responders = new Set([tabId]);
+    localPeers.set(tabId, Date.now());
+    bc.postMessage({type:'online-ping', requestId, from:tabId});
+    clearTimeout(requestTimer);
+    requestTimer=setTimeout(()=>{
+      prune();
+      render(responders.size);
+    }, REQUEST_WINDOW_MS);
+    bc._pending = bc._pending || new Map();
+    bc._pending.set(requestId, responders);
+  }
+
+  function heartbeat(){
+    localPeers.set(tabId, Date.now());
+    if(bc) bc.postMessage({type:'online-heartbeat', id:tabId, ts:Date.now()});
+    requestCount();
+  }
+
   function removeSelf(){
-    const reg=getReg();
-    delete reg[tabId];
-    saveReg(reg);
-    if(window.bc){try{bc.postMessage({type:'update'});}catch(e){}}
+    try{ if(bc) bc.postMessage({type:'online-leave', id:tabId}); }catch(e){}
+    localPeers.delete(tabId);
   }
-  let bc=null;
-  try{bc=new BroadcastChannel('64ding-local-online-v1');bc.onmessage=render;}catch(e){}
-  window.addEventListener('storage',render);
-  window.addEventListener('pagehide',removeSelf,{once:true});
-  window.addEventListener('beforeunload',removeSelf,{once:true});
-  function start(){render();setInterval(beat,HEARTBEAT_MS);}
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
+
+  try{
+    bc = new BroadcastChannel(CHANNEL);
+    bc._pending = new Map();
+    bc.onmessage = function(ev){
+      const m=ev.data||{};
+      if(m.type==='online-ping'){
+        localPeers.set(tabId, Date.now());
+        bc.postMessage({type:'online-pong', requestId:m.requestId, id:tabId});
+      } else if(m.type==='online-pong'){
+        localPeers.set(m.id, Date.now());
+        const set=bc._pending && bc._pending.get(m.requestId);
+        if(set) set.add(m.id);
+      } else if(m.type==='online-heartbeat'){
+        if(m.id) localPeers.set(m.id, Number(m.ts)||Date.now());
+      } else if(m.type==='online-leave'){
+        if(m.id) localPeers.delete(m.id);
+      } else if(m.type==='online-request-count'){
+        bc.postMessage({type:'online-response-count', requestId:m.requestId, id:tabId});
+      }
+    };
+  }catch(e){
+    bc=null;
+  }
+
+  // 多次立即同步，避免剛開頁面時需要等待。
+  function start(){
+    localPeers.set(tabId, Date.now());
+    render(1);
+    if(bc){
+      heartbeat();
+      setTimeout(requestCount, 120);
+      setTimeout(requestCount, 500);
+    }
+    setInterval(heartbeat, HEARTBEAT_MS);
+    setInterval(function(){ prune(); requestCount(); }, 5000);
+  }
+
+  window.addEventListener('pagehide', removeSelf, {once:true});
+  window.addEventListener('beforeunload', removeSelf, {once:true});
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
 })();
 </script>
 </body></html>
