@@ -5615,7 +5615,7 @@ body.supabase-authenticated #loginPanel {
       </div>
       <div class="site-menu-settings-row">
         <strong>網站資訊</strong>
-        <div style="margin-top:5px">第四階段測驗：2026/11/07</div>
+        <div style="margin-top:5px">第四階段測驗：2026/11/09</div>
       </div>
 
       <div class="site-menu-settings-note">以上為公用設定，不需登入；設定只影響目前瀏覽器。</div>
@@ -5673,7 +5673,7 @@ body.supabase-authenticated #loginPanel {
 
 <br/><hr/>
 </div>
-<div id="v40-home-exam-countdown" class="v40-home-exam-countdown" aria-live="polite">📅 第四階段測驗：2026/11/07　｜　距離測驗還有：70天</div>
+<div id="v40-home-exam-countdown" class="v40-home-exam-countdown" aria-live="polite">📅 第四階段測驗：2026/11/09　｜　距離測驗還有：計算中…</div>
 
 <style id="visitor-summary-and-theme-final">
 /* ===== 首頁訪客統計：依參考圖做成三張小卡 ===== */
@@ -6488,7 +6488,7 @@ function showLockMessage(score) {
 
 <script id="v40-safe-countdown">
 (function(){
-  const EXAM = new Date(2026, 10, 7, 0, 0, 0, 0);
+  const EXAM = new Date(2026, 10, 9, 0, 0, 0, 0);
 
   function pad2(n){ return String(n).padStart(2,"0"); }
 
@@ -6543,7 +6543,7 @@ function showLockMessage(score) {
     if(!el) return;
     var now=new Date();
     var today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    var exam=new Date(2026,10,7);
+    var exam=new Date(2026,10,9);
     var days=Math.ceil((exam-today)/86400000);
     if(days>0){
       el.innerHTML='距離測驗還有：<b>'+days+'</b>天';
@@ -6661,8 +6661,8 @@ function showLockMessage(score) {
 
 <script id="phase4-auto-countdown">
 (function () {
-  // 第四階段測驗時間：2026/11/07 14:00
-  const examDate = new Date(2026, 10, 7, 14, 0, 0, 0);
+  // 第四階段測驗時間：2026/11/09 14:00
+  const examDate = new Date(2026, 10, 9, 14, 0, 0, 0);
 
   function updateCountdown() {
     const now = new Date();
@@ -6684,10 +6684,10 @@ function showLockMessage(score) {
 
   function updateCountdownText(countdownText) {
     const replacement =
-      `第四階段測驗：2026/11/07　｜　${countdownText}`;
+      `第四階段測驗：2026/11/09　｜　${countdownText}`;
 
     const pattern =
-      /(?:4\.0V\s*｜\s*)?第四階段測驗：2026\/11\/07\s*(?:｜|\|)\s*距離測驗還有：?\s*[\d\s&nbsp;天小時]+/g;
+      /(?:4\.0V\s*｜\s*)?第四階段測驗：2026\/11\/09\s*(?:｜|\|)\s*距離測驗還有：?\s*[\d\s&nbsp;天小時]+/g;
 
     document.querySelectorAll("body *").forEach(el => {
       if (el.children.length === 0 && pattern.test(el.textContent)) {
@@ -6711,7 +6711,7 @@ function showLockMessage(score) {
 
 <script id="v40-exam-days-fix">
 (function () {
-  const examDate = new Date(2026, 10, 7, 0, 0, 0, 0); // 2026/11/07
+  const examDate = new Date(2026, 10, 9, 0, 0, 0, 0); // 2026/11/09
 
   function updateExamDays() {
     const target = document.getElementById("v40-exam-days");
@@ -6740,7 +6740,7 @@ function showLockMessage(score) {
 
 <script id="v40-exam-countdown-fix">
 (function(){
-  const TARGET=new Date(2026,10,7,0,0,0);
+  const TARGET=new Date(2026,10,9,0,0,0);
   function update(){
     const n=new Date(), t=new Date(n.getFullYear(),n.getMonth(),n.getDate());
     const d=Math.max(0,Math.ceil((TARGET-t)/86400000));
@@ -7208,17 +7208,17 @@ body.v40-night .account-divider{background:#374151;}
 (function(){
   const target = document.getElementById("v40-home-exam-countdown");
   if(!target) return;
-  const examDate = new Date(2026,10,7,0,0,0,0);
+  const examDate = new Date(2026,10,9,0,0,0,0);
   function update(){
     const now = new Date();
     const today = new Date(now.getFullYear(),now.getMonth(),now.getDate());
     const days = Math.max(0, Math.ceil((examDate-today)/86400000));
     if(days>0){
-      target.textContent = "📅 第四階段測驗：2026/11/07　｜　距離測驗還有："+days+"天";
+      target.textContent = "📅 第四階段測驗：2026/11/09　｜　距離測驗還有："+days+"天";
     }else if(days===0){
-      target.textContent = "📅 第四階段測驗：2026/11/07　｜　今天就是測驗日！";
+      target.textContent = "📅 第四階段測驗：2026/11/09　｜　今天就是測驗日！";
     }else{
-      target.textContent = "📅 第四階段測驗：2026/11/07　｜　測驗已經到了";
+      target.textContent = "📅 第四階段測驗：2026/11/09　｜　測驗已經到了";
     }
   }
   update();
@@ -7234,14 +7234,14 @@ body.v40-night .account-divider{background:#374151;}
     if(!target) return;
     const now=new Date();
     const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    const exam=new Date(2026,10,7);
+    const exam=new Date(2026,10,9);
     const days=Math.max(0,Math.ceil((exam-today)/86400000));
     if(days>0){
-      target.textContent="📅 第四階段測驗：2026/11/07　｜　距離測驗還有："+days+"天";
+      target.textContent="📅 第四階段測驗：2026/11/09　｜　距離測驗還有："+days+"天";
     }else if(days===0){
-      target.textContent="📅 第四階段測驗：2026/11/07　｜　今天就是測驗日！";
+      target.textContent="📅 第四階段測驗：2026/11/09　｜　今天就是測驗日！";
     }else{
-      target.textContent="📅 第四階段測驗：2026/11/07　｜　測驗已經到了";
+      target.textContent="📅 第四階段測驗：2026/11/09　｜　測驗已經到了";
     }
   }
   update();
@@ -8326,7 +8326,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             </div>`;
         }).join("") || `<div style="color:#888">目前沒有足夠作答次數的高錯誤機率題目</div>`;
 
-        const examDate = new Date(2026, 10, 7);
+        const examDate = new Date(2026, 10, 9);
         const now = new Date();
         const msLeft = examDate - now;
         const daysLeft = Math.ceil(msLeft / 86400000);
