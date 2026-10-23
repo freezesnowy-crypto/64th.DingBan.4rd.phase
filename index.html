@@ -5526,6 +5526,15 @@ body:not(.supabase-authenticated) #container{
   #visitorSummary .visitor-value{font-size:13px !important;}
 }
 </style>
+<style id="simple-result-star-final">
+#score{display:block;text-align:center;margin:20px auto;padding:20px 12px;max-width:560px;box-sizing:border-box;border:1px solid #ced7ce;border-radius:14px;background:#f5faf5;color:#26332a;font-size:clamp(23px,5vw,32px);line-height:1.5;font-weight:800}
+#score .simple-result-detail{font-size:clamp(14px,3vw,17px);font-weight:500;margin-top:8px}
+body.v40-night #score{background:#161616;color:#f3eee8;border-color:#484848}
+.favorite-btn,.fh-remove-wrap button{display:inline-flex!important;align-items:center;justify-content:center;min-width:34px;height:34px;padding:2px 6px!important;font-size:23px!important;line-height:1!important;border-radius:9px!important;cursor:pointer}
+.favorite-btn{vertical-align:middle}
+.fh-card .fh-meta{padding-right:50px}
+@media(max-width:700px){.favorite-btn{display:inline-flex!important;margin:4px 0 8px 4px!important}}
+</style>
 </head>
 <style>
     /* 跑馬燈外框 */
@@ -7892,7 +7901,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     function addFavoriteButton(parent,question,type){
         const b=document.createElement("button"); b.type="button"; b.className="favorite-btn";
         b.dataset.favKey=questionKey(question,type);
-        b.textContent=isFavorite(question,type)?"★ 已收藏":"☆ 收藏";
+        b.textContent=isFavorite(question,type)?"★":"☆"; b.title=isFavorite(question,type)?"取消收藏":"收藏題目"; b.setAttribute("aria-label",b.title);
         if(isFavorite(question,type)) b.classList.add("is-favorite");
         b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();toggleFavorite(question,type);});
         parent.appendChild(b);
@@ -7900,7 +7909,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     function updateFavoriteButtons(){
         const favs=getFavorites().reduce((m,x)=>(m[x.key]=1,m),{});
         document.querySelectorAll('.favorite-btn').forEach(b=>{
-            const on=!!favs[b.dataset.favKey]; b.classList.toggle('is-favorite',on); b.textContent=on?'★ 已收藏':'☆ 收藏';
+            const on=!!favs[b.dataset.favKey]; b.classList.toggle('is-favorite',on); b.textContent=on?'★':'☆'; b.title=on?'取消收藏':'收藏題目'; b.setAttribute('aria-label',b.title);
         });
     }
     function renderFavoritesPanel(){
@@ -7914,7 +7923,7 @@ document.addEventListener("DOMContentLoaded",()=>{
           const time=x.time||x.savedAt;
           const t=time?new Date(time).toLocaleString('zh-TW'):'';
           html+='<div class="fh-card">';
-          html+='<div class="fh-remove-wrap"><button type="button" data-unfav="'+i+'">移除收藏</button></div>';
+          html+='<div class="fh-remove-wrap"><button type="button" data-unfav="'+i+'" title="取消收藏" aria-label="取消收藏">★</button></div>';
           html+='<div class="fh-meta">'+(x.subject||'其他科目')+'｜'+(x.type||'題目')+(t?'｜'+t:'')+'</div>';
           html+='<div class="fh-question">'+escapeHtml(x.question||'')+'</div>';
           const opts=Array.isArray(x.options)?x.options:[];
@@ -9181,20 +9190,15 @@ const colorMap = {
         localStorage.setItem("lastQuestionCount", actualQuestionCount);
         localStorage.setItem("lastTestTime", new Date().toLocaleString("zh-TW"));
 
-        //顯示成績
-	document.getElementById("score").innerHTML = "階段考通過的機率為: " + totalScore+ "%<br>錯誤率: " + errorRate.toFixed(1) + "%（錯 " + incorrectCount + " / " + actualQuestionCount + " 題）";
+        // 簡潔結算，不觸發額外彈窗或上鎖。
+        const correctCount=Math.max(0,actualQuestionCount-incorrectCount);
+        const scoreNode=document.getElementById('score');
+        if(fullQuestion){
+          scoreNode.innerHTML='<strong>刷題完成</strong><div class="simple-result-detail">答對 '+correctCount+' 題｜答錯 '+incorrectCount+' 題｜共 '+actualQuestionCount+' 題</div>';
+        }else{
+          scoreNode.innerHTML='<strong>測驗完成　'+totalScore+' 分</strong><div class="simple-result-detail">答對 '+correctCount+' 題｜答錯 '+incorrectCount+' 題｜正確率 '+(100-errorRate).toFixed(1)+'%</div>';
+        }
 
-	// 高分上鎖提示：95 分以上直接上鎖
-	if (typeof showLockMessage === "function" && totalScore >= 95 && !fullQuestion) {
-		showLockMessage(totalScore);
-	}
-	// 低分羞辱：75 分以下才觸發
-	else if (typeof showShameMessage === "function" && totalScore < 75 && !fullQuestion) {
-		showShameMessage(totalScore);
-	}
-
-	if(fullQuestion)
-		document.getElementById("score").innerHTML = "是非錯: " + cIncorrect+"題，"+"單選錯: " + sIncorrect+"題，"+"複選錯: " + mIncorrect+"題";
 	window.scrollTo(0,document.body.scrollHeight);
 }
 	//顯示成績
@@ -9726,125 +9730,52 @@ body.v40-night #online-count{background:#111 !important;color:#F3EEE8 !important
 </style>
 <script id="local-online-count-v2-unlimited">
 (function(){
-  // 純網頁版：同一個瀏覽器／同一網站來源的所有分頁，即時統計，不設上限。
-  const CHANNEL = '64ding-local-online-unlimited-v2';
-  const TAB_KEY = '64ding_local_online_tab_id_v2';
-  const HEARTBEAT_MS = 2000;
-  const ACTIVE_MS = 7000;
-  const REQUEST_WINDOW_MS = 700;
-  let tabId = null;
-  try {
-    tabId = sessionStorage.getItem(TAB_KEY);
-    if(!tabId){
-      tabId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
-        : ('tab-' + Date.now() + '-' + Math.random().toString(36).slice(2));
-      sessionStorage.setItem(TAB_KEY, tabId);
-    }
-  } catch(e) {
-    tabId = 'tab-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-  }
-
-  let bc = null;
-  let localPeers = new Map();
-  let requestTimer = null;
-
-  function el(){
-    let e=document.getElementById('online-count');
-    if(!e){
-      e=document.createElement('div');
-      e.id='online-count';
-      e.setAttribute('aria-live','polite');
-      document.body.appendChild(e);
-    }
-    return e;
-  }
-
-  function prune(){
+  // 純前端：只統計同來源、同瀏覽器中開啟的分頁；無跨裝置人數能力。
+  const CHANNEL='64ding-local-online-v3', STORE='64ding-local-online-heartbeats-v3';
+  const ACTIVE=12000, EVERY=2500;
+  const id='tab-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+  const peers=new Map([[id,Date.now()]]);
+  let bc=null;
+  try{if('BroadcastChannel' in window) bc=new BroadcastChannel(CHANNEL);}catch(e){}
+  function display(){
     const now=Date.now();
-    for(const [id,ts] of localPeers.entries()){
-      if(id===tabId || now-ts>ACTIVE_MS) localPeers.delete(id);
-    }
+    for(const [k,t] of peers) if(k!==id && now-t>ACTIVE) peers.delete(k);
+    const e=document.getElementById('online-count');
+    if(e) e.textContent='🟢 在線人數：'+peers.size;
   }
-
-  function render(count){
-    const e=el();
-    const n=Math.max(1, Number(count)||1);
-    e.textContent='🟢 在線人數：'+n;
-    e.style.setProperty('display','block','important');
-    e.style.setProperty('visibility','visible','important');
+  function ingest(obj){
+    if(!obj || typeof obj!=='object')return;
+    const now=Date.now();
+    Object.entries(obj).forEach(([k,t])=>{if(k!==id && Number.isFinite(+t) && now-(+t)<ACTIVE && (+t)<=now+3000)peers.set(k,+t);});
+    display();
   }
-
-  function requestCount(){
-    if(!bc){
-      prune();
-      render(localPeers.size || 1);
-      return;
-    }
-    const requestId = tabId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-    const responders = new Set([tabId]);
-    localPeers.set(tabId, Date.now());
-    bc.postMessage({type:'online-ping', requestId, from:tabId});
-    clearTimeout(requestTimer);
-    requestTimer=setTimeout(()=>{
-      prune();
-      render(responders.size);
-    }, REQUEST_WINDOW_MS);
-    bc._pending = bc._pending || new Map();
-    bc._pending.set(requestId, responders);
+  function read(){try{ingest(JSON.parse(localStorage.getItem(STORE)||'{}'));}catch(e){}}
+  function write(remove){
+    try{
+      const now=Date.now(), all=JSON.parse(localStorage.getItem(STORE)||'{}');
+      Object.keys(all).forEach(k=>{if(now-(+all[k])>ACTIVE || (+all[k])>now+3000)delete all[k];});
+      if(remove)delete all[id];else all[id]=now;
+      localStorage.setItem(STORE,JSON.stringify(all));
+      ingest(all);
+    }catch(e){display();}
   }
-
-  function heartbeat(){
-    localPeers.set(tabId, Date.now());
-    if(bc) bc.postMessage({type:'online-heartbeat', id:tabId, ts:Date.now()});
-    requestCount();
-  }
-
-  function removeSelf(){
-    try{ if(bc) bc.postMessage({type:'online-leave', id:tabId}); }catch(e){}
-    localPeers.delete(tabId);
-  }
-
-  try{
-    bc = new BroadcastChannel(CHANNEL);
-    bc._pending = new Map();
-    bc.onmessage = function(ev){
+  if(bc){
+    bc.onmessage=ev=>{
       const m=ev.data||{};
-      if(m.type==='online-ping'){
-        localPeers.set(tabId, Date.now());
-        bc.postMessage({type:'online-pong', requestId:m.requestId, id:tabId});
-      } else if(m.type==='online-pong'){
-        localPeers.set(m.id, Date.now());
-        const set=bc._pending && bc._pending.get(m.requestId);
-        if(set) set.add(m.id);
-      } else if(m.type==='online-heartbeat'){
-        if(m.id) localPeers.set(m.id, Number(m.ts)||Date.now());
-      } else if(m.type==='online-leave'){
-        if(m.id) localPeers.delete(m.id);
-      } else if(m.type==='online-request-count'){
-        bc.postMessage({type:'online-response-count', requestId:m.requestId, id:tabId});
-      }
+      if(m.id===id)return;
+      if(m.type==='hello'){peers.set(m.id,Date.now()); bc.postMessage({type:'alive',id});}
+      if(m.type==='alive'){peers.set(m.id,Date.now());}
+      if(m.type==='bye')peers.delete(m.id);
+      display();
     };
-  }catch(e){
-    bc=null;
   }
-
-  // 多次立即同步，避免剛開頁面時需要等待。
-  function start(){
-    localPeers.set(tabId, Date.now());
-    render(1);
-    if(bc){
-      heartbeat();
-      setTimeout(requestCount, 120);
-      setTimeout(requestCount, 500);
-    }
-    setInterval(heartbeat, HEARTBEAT_MS);
-    setInterval(function(){ prune(); requestCount(); }, 5000);
-  }
-
-  window.addEventListener('pagehide', removeSelf, {once:true});
-  window.addEventListener('beforeunload', removeSelf, {once:true});
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true});
-  else start();
+  function beat(){peers.set(id,Date.now());read();write(false);if(bc)bc.postMessage({type:'alive',id});display();}
+  function leave(){if(bc)bc.postMessage({type:'bye',id});write(true);try{bc?.close();}catch(e){}}
+  window.addEventListener('storage',e=>{if(e.key===STORE)read();});
+  window.addEventListener('pageshow',()=>{beat();if(bc)bc.postMessage({type:'hello',id});});
+  window.addEventListener('pagehide',leave);
+  beat();if(bc)bc.postMessage({type:'hello',id});
+  setInterval(beat,EVERY);
 })();
 </script>
 </body></html>
