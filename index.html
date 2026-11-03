@@ -6660,8 +6660,7 @@ function showLockMessage(score) {
 <script id="phase4-auto-countdown">
 (function () {
   // 第四階段測驗時間：2026/11/09 14:00
-  const examDate = new Date(2026, 10, 7, 14, 0, 0, 0);
-
+  const examDate = new Date(2026, 10, 8, 38, 0, 0, 0);
   function updateCountdown() {
     const now = new Date();
     const diffMs = examDate.getTime() - now.getTime();
@@ -6709,7 +6708,7 @@ function showLockMessage(score) {
 
 <script id="v40-exam-days-fix">
 (function () {
-  const examDate = new Date(2026, 10, 7, 0, 0, 0, 0); // 2026/11/07
+  const examDate = new Date(2026, 11, 9, 0, 0, 0, 0); // 2026/11/09
 
   function updateExamDays() {
     const target = document.getElementById("v40-exam-days");
@@ -6738,7 +6737,7 @@ function showLockMessage(score) {
 
 <script id="v40-exam-countdown-fix">
 (function(){
-  const TARGET=new Date(2026,10,7,0,0,0);
+  const TARGET=new Date(2026,11,9,0,0,0);
   function update(){
     const n=new Date(), t=new Date(n.getFullYear(),n.getMonth(),n.getDate());
     const d=Math.max(0,Math.ceil((TARGET-t)/86400000));
